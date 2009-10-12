@@ -28,8 +28,7 @@ module MiniFB
         # returns current user
         def user
             return @user unless @user.nil?
-            @user = User.new(MiniFB.call("Users.getInfo", @api_key, @secret_key, "session_key"=>@session_key, "uids"=>@uid, "fields"=>User.all_fields)[0], self)
-            puts 'GOT USER=' + @user.inspect
+            @user = User.new(MiniFB.call(@api_key, @secret_key, "Users.getInfo", "session_key"=>@session_key, "uids"=>@uid, "fields"=>User.all_fields)[0], self)
             @user
         end
 
@@ -71,7 +70,7 @@ module MiniFB
         def merge_aid(aid, uid)
             uid = uid.to_i
             ret = (uid << 32) + (aid & 0xFFFFFFFF)
-            puts 'merge_aid=' + ret.inspect
+#            puts 'merge_aid=' + ret.inspect
             return ret
         end
     end
@@ -88,7 +87,7 @@ module MiniFB
                 pids = pids.join(",")
                 params["pids"] = pids
             end
-            MiniFB.call("photos.get", @session.api_key, @session.secret_key, params.update("session_key"=>@session.session_key))
+            MiniFB.call(@session.api_key, @session.secret_key, "photos.get", params.update("session_key"=>@session.session_key))
         end
     end
 
@@ -109,7 +108,7 @@ module MiniFB
 
     # The secret argument should be an instance of FacebookSecret
     # to hide value from simple introspection.
-    def MiniFB.call( method, api_key, secret, kwargs )
+    def MiniFB.call( api_key, secret, method, kwargs )
 
         puts 'kwargs=' + kwargs.inspect
 
