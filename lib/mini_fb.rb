@@ -7,6 +7,15 @@ module MiniFB
     FB_URL = "http://api.facebook.com/restserver.php"
     FB_API_VERSION = "1.0"
 
+    @@logging = false
+
+    def enable_logging
+        @@logging = true
+    end
+    def disable_logging
+        @@logging = false
+    end
+
     class FaceBookError < StandardError
         # Error that happens during a facebook call.
         def initialize( error_code, error_msg )
@@ -37,6 +46,11 @@ module MiniFB
         end
 
 
+        def call(method, params={})
+            return MiniFB.call(api_key, secret_key, method, params.update("session_key"=>session_key))
+        end
+
+
     end
     class User
         FIELDS = [:uid, :status, :political, :pic_small, :name, :quotes, :is_app_user, :tv, :profile_update_time, :meeting_sex, :hs_info, :timezone, :relationship_status, :hometown_location, :about_me, :wall_count, :significant_other_id, :pic_big, :music, :work_history, :sex, :religion, :notes_count, :activities, :pic_square, :movies, :has_added_app, :education_history, :birthday, :birthday_date, :first_name, :meeting_for, :last_name, :interests, :current_location, :pic, :books, :affiliations, :locale, :profile_url, :proxied_email, :email_hashes, :allowed_restrictions, :pic_with_logo, :pic_big_with_logo, :pic_small_with_logo, :pic_square_with_logo]
@@ -44,6 +58,10 @@ module MiniFB
 
         def self.all_fields
             FIELDS.join(",")
+        end
+
+        def self.standard_fields
+            STANDARD_FIELDS.join(",")
         end
 
         def initialize(fb_hash, session)
@@ -87,7 +105,7 @@ module MiniFB
                 pids = pids.join(",")
                 params["pids"] = pids
             end
-            MiniFB.call(@session.api_key, @session.secret_key, "photos.get", params.update("session_key"=>@session.session_key))
+            @session.call("photos.get", params)
         end
     end
 
@@ -142,7 +160,7 @@ module MiniFB
         return response.body if custom_format
 
         data = JSON.parse( response.body )
-        puts 'response=' + data.inspect
+        puts 'response=' + data.inspect if @@logging
         if data.include?( "error_msg" ) then
             raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
         end
