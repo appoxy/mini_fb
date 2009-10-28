@@ -161,7 +161,7 @@ module MiniFB
     # The arguments must be a mapping of to string keys and values
     # or a string of http request data.
 #
-    # If the data is invalid or not signed properly, and empty
+    # If the data is invalid or not signed properly, an empty
     # dictionary is returned.
 #
     # The secret argument should be an instance of FacebookSecret
