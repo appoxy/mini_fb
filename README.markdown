@@ -3,6 +3,13 @@ MiniFB - the simple miniature facebook library
 
 MiniFB is a small, lightweight Ruby library for interacting with the [Facebook API](http://wiki.developers.facebook.com/index.php/API).
 
+Installation
+-------------
+
+We're using gemcutter so be sure to have gemcutter as a source, then: 
+
+    gem install mini_fb
+
 General Usage
 -------------
 
