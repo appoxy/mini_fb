@@ -42,4 +42,8 @@ Or if you want other photos, try:
 
     photos = @fb.photos("pids"=>[12343243,920382343,9208348])
 
+Support
+--------
+
+Join our Discussion Group at: http://groups.google.com/group/mini_fb
 
