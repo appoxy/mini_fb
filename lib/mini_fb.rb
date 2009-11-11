@@ -12,6 +12,7 @@ module MiniFB
     def enable_logging
         @@logging = true
     end
+
     def disable_logging
         @@logging = false
     end
@@ -130,6 +131,10 @@ module MiniFB
 
         puts 'kwargs=' + kwargs.inspect
 
+        if secret.is_a? String
+            secret = FaceBookSecret.new(secret)
+        end
+
         # Prepare arguments for call
         call_id = kwargs.fetch("call_id", true)
         if call_id == true then
@@ -146,6 +151,7 @@ module MiniFB
 
         # Hash with secret
         arg_string = String.new
+        # todo: convert symbols to strings, symbols break the next line
         kwargs.sort.each { |kv| arg_string << kv[0] << "=" << kv[1].to_s }
         kwargs["sig"] = Digest::MD5.hexdigest( arg_string + secret.value.call )
 
@@ -167,6 +173,41 @@ module MiniFB
         return data
     end
 
+    # Returns true is signature is valid, false otherwise.
+    def MiniFB.verify_signature( secret, arguments )
+        signature = arguments.delete( "fb_sig" )
+        return false if signature.nil?
+
+        unsigned = Hash.new
+        signed = Hash.new
+
+        arguments.each do |k, v|
+            if k =~ /^fb_sig_(.*)/ then
+                signed[$1] = v
+            else
+                unsigned[k] = v
+            end
+        end
+
+        arg_string = String.new
+        signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
+        if Digest::MD5.hexdigest( arg_string + secret ) == signature
+            return true
+        end
+        return false
+    end
+
+    # Returns the login/add app url for your application.
+    #
+    # options:
+    #    - :next => a relative next page to go to. relative to your facebook connect url or if :canvas is true, then relative to facebook app url
+    #    - :canvas => true/false - to say whether this is a canvas app or not
+    def self.login_url(api_key, options={})
+        login_url = "http://api.facebook.com/login.php?api_key=#{api_key}"
+        login_url << "&next=#{options[:next]}" if options[:next]
+        login_url << "&canvas" if options[:canvas]
+        login_url
+    end
 
     # This function expects arguments as a hash, so
     # it is agnostic to different POST handling variants in ruby.
@@ -185,6 +226,7 @@ module MiniFB
     # The secret argument should be an instance of FacebookSecret
     # to hide value from simple introspection.
 #
+    # DEPRECATED, use verify_signature instead
     def MiniFB.validate( secret, arguments )
 
         signature = arguments.delete( "fb_sig" )
@@ -203,7 +245,7 @@ module MiniFB
 
         arg_string = String.new
         signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
-        if Digest::MD5.hexdigest( arg_string + secret ) != signature then
+        if Digest::MD5.hexdigest( arg_string + secret ) != signature
             unsigned # Hash is incorrect, return only unsigned fields.
         else
             unsigned.merge signed

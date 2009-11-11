@@ -7,6 +7,9 @@ class MiniFBTests < Test::Unit::TestCase
     def teardown
 
     end
+    def test_signature
+        
+    end
 
     def test_basic_calls
 
@@ -19,4 +22,5 @@ class MiniFBTests < Test::Unit::TestCase
     def test_photos
         
     end
+
 end
