@@ -166,13 +166,21 @@ module MiniFB
         return response.body if custom_format
 
         fb_method = kwargs["method"]
-        if fb_method == "users.getLoggedInUser" # Little hack because this response isn't valid JSON
-            return response.body
-        end
-        data = JSON.parse( response.body )
-        puts 'response=' + data.inspect if @@logging
-        if data.include?( "error_msg" ) then
-            raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
+        body = response.body
+
+        begin
+            data = JSON.parse( body )
+            puts 'response=' + data.inspect if @@logging
+            if data.include?( "error_msg" ) then
+                raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
+            end
+
+        rescue JSON::ParserError => ex
+            if fb_method == "users.getLoggedInUser" # Little hack because this response isn't valid JSON
+                return body
+            else
+                raise ex
+            end
         end
         return data
     end
