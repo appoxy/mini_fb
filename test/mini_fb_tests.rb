@@ -4,9 +4,12 @@ class MiniFBTests < Test::Unit::TestCase
     def setup
 
     end
+
     def teardown
 
     end
+
+    # Test signature verification.
     def test_signature
         
     end
