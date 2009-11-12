@@ -165,6 +165,10 @@ module MiniFB
         # Handle response
         return response.body if custom_format
 
+        fb_method = kwargs["method"]
+        if fb_method == "users.getLoggedInUser" # Little hack because this response isn't valid JSON
+            return response.body
+        end
         data = JSON.parse( response.body )
         puts 'response=' + data.inspect if @@logging
         if data.include?( "error_msg" ) then
