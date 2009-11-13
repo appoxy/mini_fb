@@ -20,7 +20,7 @@ module MiniFB
     class FaceBookError < StandardError
         # Error that happens during a facebook call.
         def initialize( error_code, error_msg )
-            raise StandardError.new( "Facebook error #{error_code}: #{error_msg}" )
+            super("Facebook error #{error_code}: #{error_msg}" )
         end
     end
 
