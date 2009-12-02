@@ -1,7 +1,7 @@
 module MiniFB
     require 'digest/md5'
     require 'erb'
-    require 'json/pure'
+    require 'json/pure' unless defined? ActiveSupport::JSON
 
     # Global constants
     FB_URL = "http://api.facebook.com/restserver.php"
