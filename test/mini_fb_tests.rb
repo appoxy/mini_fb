@@ -1,8 +1,8 @@
 require 'test/unit'
 class MiniFBTests < Test::Unit::TestCase
 
-    def setup
 
+    def setup
     end
 
     def teardown
