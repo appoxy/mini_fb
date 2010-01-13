@@ -111,6 +111,8 @@ module MiniFB
         end
     end
 
+    BAD_JSON_METHODS = ["users.getLoggedInUser","auth.promoteSession"]
+
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
     # The 'sig' value will always be computed automatically.
@@ -177,7 +179,7 @@ module MiniFB
             end
 
         rescue JSON::ParserError => ex
-            if fb_method == "users.getLoggedInUser" # Little hack because this response isn't valid JSON
+            if BAD_JSON_METHODS.include?(fb_method) # Little hack because this response isn't valid JSON
                 return body
             else
                 raise ex
