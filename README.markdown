@@ -26,6 +26,10 @@ Get a MiniFB::Session:
 
     @fb = MiniFB::Session.new(FB_API_KEY, FB_SECRET, @fb_session, @fb_uid)
 
+Then it makes it a bit easier to use call for a particular user/session.
+
+    response = @fb.calls("stream.get")
+
 With the session, you can then get the user information for the session/uid.
 
     user = @fb.user
