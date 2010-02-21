@@ -111,7 +111,7 @@ module MiniFB
         end
     end
 
-    BAD_JSON_METHODS = ["users.getLoggedInUser","auth.promoteSession"]
+    BAD_JSON_METHODS = ["users.getloggedinuser","auth.promotesession", "users.hasapppermission"]
 
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
@@ -168,7 +168,7 @@ module MiniFB
         # Handle response
         return response.body if custom_format
 
-        fb_method = kwargs["method"]
+        fb_method = kwargs["method"].downcase
         body = response.body
 
         begin
@@ -180,6 +180,9 @@ module MiniFB
 
         rescue JSON::ParserError => ex
             if BAD_JSON_METHODS.include?(fb_method) # Little hack because this response isn't valid JSON
+                if body == "0"
+                    return false
+                end
                 return body
             else
                 raise ex
