@@ -42,6 +42,33 @@ Or if you want other photos, try:
 
     photos = @fb.photos("pids"=>[12343243,920382343,9208348])
 
+Facebook Connect
+----------------
+
+This is actually very easy, first follow these instructions: http://wiki.developers.facebook.com/index.php/Connect/Setting_Up_Your_Site
+
+Then add the following script to the page where you put the login button so it looks like this:
+
+    <script>
+        function facebook_onlogin(){
+            document.location.href = "<%= url_for :action=>"fb_connect" %>";
+        }
+    </script>
+    <fb:login-button onlogin="facebook_onlogin();"></fb:login-button>
+
+Define an fb_connect method in your login/sessions controller like so:
+
+     def fb_connect
+        @fb_uid = cookies[FB_API_KEY + "_user"]
+        @fb_session = cookies[FB_API_KEY + "_session_key"]
+        puts "uid=#{@fb_uid}"
+        puts "session=#{@fb_session}"
+
+        # And here you would create the user if it doesn't already exist, then redirect them to wherever you want.
+
+    end
+
+
 Support
 --------
 
