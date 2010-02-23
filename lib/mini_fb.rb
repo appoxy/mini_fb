@@ -10,11 +10,11 @@ module MiniFB
 
     @@logging = false
 
-    def enable_logging
+    def self.enable_logging
         @@logging = true
     end
 
-    def disable_logging
+    def self.disable_logging
         @@logging = false
     end
 
@@ -55,8 +55,8 @@ module MiniFB
 
     end
     class User
-        FIELDS = [:uid, :status, :political, :pic_small, :name, :quotes, :is_app_user, :tv, :profile_update_time, :meeting_sex, :hs_info, :timezone, :relationship_status, :hometown_location, :about_me, :wall_count, :significant_other_id, :pic_big, :music, :work_history, :sex, :religion, :notes_count, :activities, :pic_square, :movies, :has_added_app, :education_history, :birthday, :birthday_date, :first_name, :meeting_for, :last_name, :interests, :current_location, :pic, :books, :affiliations, :locale, :profile_url, :proxied_email, :email_hashes, :allowed_restrictions, :pic_with_logo, :pic_big_with_logo, :pic_small_with_logo, :pic_square_with_logo]
-        STANDARD_FIELDS = [:uid, :first_name, :last_name, :name, :timezone, :birthday, :sex, :affiliations, :locale, :profile_url, :proxied_email]
+        FIELDS = [:uid, :status, :political, :pic_small, :name, :quotes, :is_app_user, :tv, :profile_update_time, :meeting_sex, :hs_info, :timezone, :relationship_status, :hometown_location, :about_me, :wall_count, :significant_other_id, :pic_big, :music, :work_history, :sex, :religion, :notes_count, :activities, :pic_square, :movies, :has_added_app, :education_history, :birthday, :birthday_date, :first_name, :meeting_for, :last_name, :interests, :current_location, :pic, :books, :affiliations, :locale, :profile_url, :proxied_email, :email, :email_hashes, :allowed_restrictions, :pic_with_logo, :pic_big_with_logo, :pic_small_with_logo, :pic_square_with_logo]
+        STANDARD_FIELDS = [:uid, :first_name, :last_name, :name, :timezone, :birthday, :sex, :affiliations, :locale, :profile_url, :proxied_email, :email]
 
         def self.all_fields
             FIELDS.join(",")
@@ -111,7 +111,7 @@ module MiniFB
         end
     end
 
-    BAD_JSON_METHODS = ["users.getloggedinuser","auth.promotesession", "users.hasapppermission"]
+    BAD_JSON_METHODS = ["users.getloggedinuser", "auth.promotesession", "users.hasapppermission", "Auth.revokeExtendedPermission"].collect { |x| x.downcase }
 
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
@@ -132,7 +132,7 @@ module MiniFB
     # to hide value from simple introspection.
     def MiniFB.call( api_key, secret, method, kwargs )
 
-        puts 'kwargs=' + kwargs.inspect
+        puts 'kwargs=' + kwargs.inspect if @@logging
 
         if secret.is_a? String
             secret = FaceBookSecret.new(secret)
@@ -171,16 +171,16 @@ module MiniFB
         fb_method = kwargs["method"].downcase
         body = response.body
 
+        puts 'response=' + body.inspect if @@logging
         begin
             data = JSON.parse( body )
-            puts 'response=' + data.inspect if @@logging
             if data.include?( "error_msg" ) then
                 raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
             end
 
         rescue JSON::ParserError => ex
             if BAD_JSON_METHODS.include?(fb_method) # Little hack because this response isn't valid JSON
-                if body == "0"
+                if body == "0" || body == "false"
                     return false
                 end
                 return body
