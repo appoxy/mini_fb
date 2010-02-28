@@ -19,8 +19,10 @@ module MiniFB
     end
 
     class FaceBookError < StandardError
+        attr_accessor :code
         # Error that happens during a facebook call.
         def initialize( error_code, error_msg )
+            @code = error_code
             super("Facebook error #{error_code}: #{error_msg}" )
         end
     end
