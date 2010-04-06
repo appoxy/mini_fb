@@ -78,7 +78,7 @@ Photo Uploads
 
 This is as simple as calling:
 
-    @fb.call("photos.upload", "file_name"=>"<full path to file>")
+    @fb.call("photos.upload", "filename"=>"<full path to file>")
 
 The file_name parameter will be used as the file data.
 
