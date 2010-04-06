@@ -142,17 +142,19 @@ module MiniFB
 
         # Prepare arguments for call
         call_id = kwargs.fetch("call_id", true)
-        if call_id == true then
+        if call_id == true
             kwargs["call_id"] = Time.now.tv_sec.to_s
         else
             kwargs.delete("call_id")
         end
 
-        custom_format = kwargs.include?("format") or kwargs.include?("callback")
+        custom_format = kwargs.include?("format") || kwargs.include?("callback")
         kwargs["format"] ||= "JSON"
         kwargs["v"] ||= FB_API_VERSION
         kwargs["api_key"]||= api_key
         kwargs["method"] ||= method
+
+        file_name = kwargs.delete("filename")
 
         # Hash with secret
         arg_string = String.new
@@ -160,23 +162,32 @@ module MiniFB
         kwargs.sort.each { |kv| arg_string << kv[0] << "=" << kv[1].to_s }
         kwargs["sig"] = Digest::MD5.hexdigest( arg_string + secret.value.call )
 
-        # Call website with POST request
-        begin
-            response = Net::HTTP.post_form( URI.parse(FB_URL), kwargs )
-        rescue SocketError => err
-            raise IOError.new( "Cannot connect to the facebook server: " + err )
+        fb_method = kwargs["method"].downcase
+        if fb_method == "photos.upload"
+            # Then we need a multipart post
+            response = MiniFB.post_upload(file_name, kwargs)
+        else
+
+            begin
+                response = Net::HTTP.post_form( URI.parse(FB_URL), kwargs )
+            rescue SocketError => err
+                # why are we catching this and throwing as different error?  hmmm..
+#                raise IOError.new( "Cannot connect to the facebook server: " + err )
+                raise err
+            end
         end
+
 
         # Handle response
         return response.body if custom_format
 
-        fb_method = kwargs["method"].downcase
+
         body = response.body
 
         puts 'response=' + body.inspect if @@logging
         begin
             data = JSON.parse( body )
-            if data.include?( "error_msg" ) then
+            if data.include?( "error_msg" )
                 raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
             end
 
@@ -191,6 +202,33 @@ module MiniFB
             end
         end
         return data
+    end
+
+     def MiniFB.post_upload(filename, kwargs)
+      content = File.open(filename, 'rb') { |f| f.read }
+      boundary = Digest::MD5.hexdigest(content)
+      header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
+
+      # Build query
+      query = ''
+      kwargs.each { |a, v|
+        query <<
+          "--#{boundary}\r\n" <<
+          "Content-Disposition: form-data; name=\"#{a}\"\r\n\r\n" <<
+          "#{v}\r\n"
+      }
+      query <<
+        "--#{boundary}\r\n" <<
+        "Content-Disposition: form-data; filename=\"#{File.basename(filename)}\"\r\n" <<
+        "Content-Transfer-Encoding: binary\r\n" <<
+        "Content-Type: image/jpeg\r\n\r\n" <<
+        content <<
+        "\r\n" <<
+        "--#{boundary}--"
+
+      # Call Facebook with POST multipart/form-data request
+      uri = URI.parse(FB_URL)
+      Net::HTTP.start(uri.host) {|http| http.post uri.path, query, header}
     end
 
     # Returns true is signature is valid, false otherwise.
