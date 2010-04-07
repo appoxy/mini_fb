@@ -254,6 +254,36 @@ module MiniFB
         end
         return false
     end
+    
+    # Validates that the cookies sent by the user are those that were set by facebook. Since your
+    # secret is only known by you and facebook it is used to sign all of the cookies set.
+    #
+    # options:
+    # * api_key - the connect applications facebook API key
+    # * secret - the connect application secret
+    # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
+    def MiniFB.verify_connect_signature(api_key, secret, cookies)
+      signature = cookies[api_key]
+      return false if signature.nil?
+
+      unsigned = Hash.new
+      signed = Hash.new
+
+      cookies.each do |k, v|
+        if k =~ /^#{api_key}_(.*)/ then
+          signed[$1] = v
+        else
+          unsigned[k] = v
+        end
+      end
+
+      arg_string = String.new
+      signed.sort.each {|kv| arg_string << kv[0] << "=" << kv[1] }
+      if Digest::MD5.hexdigest(arg_string + secret) == signature
+        return true
+      end
+      return false
+    end
 
     # Returns the login/add app url for your application.
     #
