@@ -67,8 +67,12 @@ Define an fb_connect method in your login/sessions controller like so:
         @fb_session = cookies[FB_API_KEY + "_session_key"]
         puts "uid=#{@fb_uid}"
         puts "session=#{@fb_session}"
-
-        # And here you would create the user if it doesn't already exist, then redirect them to wherever you want.
+        
+        if MiniFB.verify_connect_signature(FB_API_KEY, FB_SECRET, cookies)
+          # And here you would create the user if it doesn't already exist, then redirect them to wherever you want.
+        else
+          # The cookies may have been modified as the signature does not match
+        end
 
     end
 
