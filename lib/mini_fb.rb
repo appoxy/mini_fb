@@ -114,7 +114,8 @@ module MiniFB
     end
 
     BAD_JSON_METHODS = ["users.getloggedinuser", "auth.promotesession", "users.hasapppermission",
-                        "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan"].collect { |x| x.downcase }
+                        "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan",
+                        "dashboard.addNews", "dashboard.publishActivity"].collect { |x| x.downcase }
 
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
@@ -157,11 +158,7 @@ module MiniFB
 
         file_name = kwargs.delete("filename")
 
-        # Hash with secret
-        arg_string = String.new
-        # todo: convert symbols to strings, symbols break the next line
-        kwargs.sort.each { |kv| arg_string << kv[0] << "=" << kv[1].to_s }
-        kwargs["sig"] = Digest::MD5.hexdigest( arg_string + secret.value.call )
+        kwargs["sig"] = signature_for(kwargs, secret.value.call)
 
         fb_method = kwargs["method"].downcase
         if fb_method == "photos.upload"
@@ -170,7 +167,7 @@ module MiniFB
         else
 
             begin
-                response = Net::HTTP.post_form( URI.parse(FB_URL), kwargs )
+                response = Net::HTTP.post_form( URI.parse(FB_URL), post_params(kwargs))
             rescue SocketError => err
                 # why are we catching this and throwing as different error?  hmmm..
 #                raise IOError.new( "Cannot connect to the facebook server: " + err )
@@ -349,5 +346,31 @@ module MiniFB
         def initialize( value )
             @value = Proc.new { value }
         end
+    end
+    
+    private
+    def self.post_params(params)
+      post_params = {}
+      params.each do |k,v|
+        k = k.to_s unless k.is_a?(String)
+        if Array === v || Hash === v
+          post_params[k] = JSON.dump(v)       
+        else
+          post_params[k] = v
+        end
+      end
+      puts post_params.inspect
+      post_params
+    end
+    
+    def self.signature_for(params, secret)
+      params.delete_if { |k,v| v.nil? }
+      raw_string = params.inject([]) do |collection, pair|
+        collection << pair.map { |x|
+          Array === x ? JSON.dump(x) : x
+        }.join("=")
+        collection
+      end.sort.join
+      Digest::MD5.hexdigest([raw_string, secret].join)
     end
 end
