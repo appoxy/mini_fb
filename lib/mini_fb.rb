@@ -114,7 +114,7 @@ module MiniFB
     end
 
     BAD_JSON_METHODS = ["users.getloggedinuser", "auth.promotesession", "users.hasapppermission",
-                        "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan"].collect { |x| x.downcase }
+                        "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan", "stream.publish"].collect { |x| x.downcase }
 
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
