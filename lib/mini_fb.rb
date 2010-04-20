@@ -115,7 +115,10 @@ module MiniFB
 
     BAD_JSON_METHODS = ["users.getloggedinuser", "auth.promotesession", "users.hasapppermission",
                         "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan",
-                        "dashboard.addNews", "dashboard.publishActivity"].collect { |x| x.downcase }
+                        "stream.publish",
+                        "dashboard.addNews", "dashboard.addGlobalNews", "dashboard.publishActivity",
+                        "dashboard.incrementcount", "dashboard.setcount"
+    ].collect { |x| x.downcase }
 
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
@@ -202,31 +205,31 @@ module MiniFB
         return data
     end
 
-     def MiniFB.post_upload(filename, kwargs)
-      content = File.open(filename, 'rb') { |f| f.read }
-      boundary = Digest::MD5.hexdigest(content)
-      header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
+    def MiniFB.post_upload(filename, kwargs)
+        content = File.open(filename, 'rb') { |f| f.read }
+        boundary = Digest::MD5.hexdigest(content)
+        header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
 
-      # Build query
-      query = ''
-      kwargs.each { |a, v|
+        # Build query
+        query = ''
+        kwargs.each { |a, v|
+            query <<
+                    "--#{boundary}\r\n" <<
+                    "Content-Disposition: form-data; name=\"#{a}\"\r\n\r\n" <<
+                    "#{v}\r\n"
+        }
         query <<
-          "--#{boundary}\r\n" <<
-          "Content-Disposition: form-data; name=\"#{a}\"\r\n\r\n" <<
-          "#{v}\r\n"
-      }
-      query <<
-        "--#{boundary}\r\n" <<
-        "Content-Disposition: form-data; filename=\"#{File.basename(filename)}\"\r\n" <<
-        "Content-Transfer-Encoding: binary\r\n" <<
-        "Content-Type: image/jpeg\r\n\r\n" <<
-        content <<
-        "\r\n" <<
-        "--#{boundary}--"
+                "--#{boundary}\r\n" <<
+                "Content-Disposition: form-data; filename=\"#{File.basename(filename)}\"\r\n" <<
+                "Content-Transfer-Encoding: binary\r\n" <<
+                "Content-Type: image/jpeg\r\n\r\n" <<
+                content <<
+                "\r\n" <<
+                "--#{boundary}--"
 
-      # Call Facebook with POST multipart/form-data request
-      uri = URI.parse(FB_URL)
-      Net::HTTP.start(uri.host) {|http| http.post uri.path, query, header}
+        # Call Facebook with POST multipart/form-data request
+        uri = URI.parse(FB_URL)
+        Net::HTTP.start(uri.host) {|http| http.post uri.path, query, header}
     end
 
     # Returns true is signature is valid, false otherwise.
@@ -252,7 +255,7 @@ module MiniFB
         end
         return false
     end
-    
+
     # Validates that the cookies sent by the user are those that were set by facebook. Since your
     # secret is only known by you and facebook it is used to sign all of the cookies set.
     #
@@ -261,26 +264,26 @@ module MiniFB
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
     def MiniFB.verify_connect_signature(api_key, secret, cookies)
-      signature = cookies[api_key]
-      return false if signature.nil?
+        signature = cookies[api_key]
+        return false if signature.nil?
 
-      unsigned = Hash.new
-      signed = Hash.new
+        unsigned = Hash.new
+        signed = Hash.new
 
-      cookies.each do |k, v|
-        if k =~ /^#{api_key}_(.*)/ then
-          signed[$1] = v
-        else
-          unsigned[k] = v
+        cookies.each do |k, v|
+            if k =~ /^#{api_key}_(.*)/ then
+                signed[$1] = v
+            else
+                unsigned[k] = v
+            end
         end
-      end
 
-      arg_string = String.new
-      signed.sort.each {|kv| arg_string << kv[0] << "=" << kv[1] }
-      if Digest::MD5.hexdigest(arg_string + secret) == signature
-        return true
-      end
-      return false
+        arg_string = String.new
+        signed.sort.each {|kv| arg_string << kv[0] << "=" << kv[1] }
+        if Digest::MD5.hexdigest(arg_string + secret) == signature
+            return true
+        end
+        return false
     end
 
     # Returns the login/add app url for your application.
@@ -347,30 +350,30 @@ module MiniFB
             @value = Proc.new { value }
         end
     end
-    
+
     private
     def self.post_params(params)
-      post_params = {}
-      params.each do |k,v|
-        k = k.to_s unless k.is_a?(String)
-        if Array === v || Hash === v
-          post_params[k] = JSON.dump(v)       
-        else
-          post_params[k] = v
+        post_params = {}
+        params.each do |k, v|
+            k = k.to_s unless k.is_a?(String)
+            if Array === v || Hash === v
+                post_params[k] = JSON.dump(v)
+            else
+                post_params[k] = v
+            end
         end
-      end
-      puts post_params.inspect
-      post_params
+        puts post_params.inspect
+        post_params
     end
-    
+
     def self.signature_for(params, secret)
-      params.delete_if { |k,v| v.nil? }
-      raw_string = params.inject([]) do |collection, pair|
-        collection << pair.map { |x|
-          Array === x ? JSON.dump(x) : x
-        }.join("=")
-        collection
-      end.sort.join
-      Digest::MD5.hexdigest([raw_string, secret].join)
+        params.delete_if { |k, v| v.nil? }
+        raw_string = params.inject([]) do |collection, pair|
+            collection << pair.map { |x|
+                Array === x ? JSON.dump(x) : x
+            }.join("=")
+            collection
+        end.sort.join
+        Digest::MD5.hexdigest([raw_string, secret].join)
     end
 end
