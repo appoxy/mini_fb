@@ -255,6 +255,17 @@ module MiniFB
         return false
     end
     
+    # Parses cookies in order to extract the facebook cookie and parse it into a useable hash
+    #
+    # options:
+    # * api_key - the connect applications facebook API key
+    # * secret - the connect application secret
+    # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
+    def MiniFB.parse_cookie_information(api_key, cookies)
+      return nil if cookies["fbs_#{api_key}"].nil?
+      Hash[*cookies["fbs_#{api_key}"].split('&').map{|v| v.split('=', 2) }.flatten]
+    end
+    
     # Validates that the cookies sent by the user are those that were set by facebook. Since your
     # secret is only known by you and facebook it is used to sign all of the cookies set.
     #
@@ -262,27 +273,18 @@ module MiniFB
     # * api_key - the connect applications facebook API key
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
+    def MiniFB.verify_cookie_signature(api_key, secret, cookies)
+      fb_keys = MiniFB.parse_cookie_information(api_key, cookies)
+      return false if fb_keys.nil?
+      
+      signature = fb_keys.delete('sig')
+      return signature == Digest::MD5.hexdigest(fb_keys.map{|k,v| "#{k}=#{v}"}.sort.join + secret)
+    end
+    
+    # <b>DEPRECATED:</b> Please use <tt>verify_cookie_signature</tt> instead.
     def MiniFB.verify_connect_signature(api_key, secret, cookies)
-      signature = cookies[api_key]
-      return false if signature.nil?
-
-      unsigned = Hash.new
-      signed = Hash.new
-
-      cookies.each do |k, v|
-        if k =~ /^#{api_key}_(.*)/ then
-          signed[$1] = v
-        else
-          unsigned[k] = v
-        end
-      end
-
-      arg_string = String.new
-      signed.sort.each {|kv| arg_string << kv[0] << "=" << kv[1] }
-      if Digest::MD5.hexdigest(arg_string + secret) == signature
-        return true
-      end
-      return false
+      warn "DEPRECATION WARNING: 'verify_connect_signature' has been renamed to 'verify_cookie_signature' as Facebook no longer calls this 'connect'"
+      MiniFB.verify_cookie_signature(api_key, secret, cookies)
     end
 
     # Returns the login/add app url for your application.
