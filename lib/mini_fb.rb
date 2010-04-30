@@ -339,19 +339,32 @@ module MiniFB
         url << "/#{options[:type]}" if options[:type]
         url << "?access_token=#{URI.escape(access_token)}"
         url << "&metadata=1" if options[:metadata]
+        return fetch url
+    end
+
+    def self.fetch(url, options={})
         puts 'url=' + url if @@logging
         begin
-            resp = RestClient.get url
+            if options[:type] == :post
+                resp = RestClient.post url, options[:params]
+            else
+                resp = RestClient.get url
+            end
+            puts 'resp=' + resp.body.to_s if @@logging
+            res_hash = JSON.parse(resp.body)
+            if res_hash.is_a? Array # fql queries return this
+                res_hash.collect! {|x| Hashie::Mash.new(x) }
+            else
+                res_hash = Hashie::Mash.new(res_hash)
+            end
+            return res_hash
         rescue RestClient::Exception => ex
             puts ex.http_code.to_s
             puts 'ex.http_body=' + ex.http_body if @@logging
             res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
         end
-        puts 'resp=' + resp.body.to_s if @@logging
-        res_hash = JSON.parse(resp.body)
-        res_hash = Hashie::Mash.new(res_hash)
-        return res_hash
+
     end
 
     # options:
@@ -363,19 +376,16 @@ module MiniFB
         params = {}
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        puts 'url=' + url if @@logging
-        begin
-            resp = RestClient.post url, params
-        rescue RestClient::Exception => ex
-            puts ex.http_code.to_s
-            puts 'ex.http_body=' + ex.http_body if @@logging
-            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good json response
-            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
-        end
-        puts 'resp=' + resp.body.to_s if @@logging
-        res_hash = JSON.parse(resp.body)
-        res_hash = Hashie::Mash.new(res_hash)
-        return res_hash
+        return fetch url, :params=>params, :method=>:post
+
+    end
+
+    def self.fql(access_token, fql_query, options={})
+        url = "https://api.facebook.com/method/fql.query"
+        url << "?access_token=#{URI.escape(access_token)}"
+        url << "&query=#{URI.escape(fql_query)}"
+        url << "&format=JSON"
+        return fetch url
     end
 
     # Returns all available scopes.
