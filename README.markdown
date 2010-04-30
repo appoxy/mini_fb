@@ -3,6 +3,8 @@ MiniFB - the simple miniature facebook library
 
 MiniFB is a small, lightweight Ruby library for interacting with the [Facebook API](http://wiki.developers.facebook.com/index.php/API).
 
+Brought to you by: ![Appoxy](http://www.simpledeployr.com/images/global/appoxy-small.png)
+
 Support
 --------
 
