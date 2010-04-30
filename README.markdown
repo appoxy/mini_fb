@@ -6,7 +6,12 @@ MiniFB is a small, lightweight Ruby library for interacting with the [Facebook A
 Support
 --------
 
-Join our Discussion Group at: http://groups.google.com/group/mini_fb
+Join our Discussion Group at: [http://groups.google.com/group/mini_fb]
+
+Demo Rails Application
+-------------------
+
+There is a demo Rails app that uses mini_fb graph api at: http://github.com/appoxy/mini_fb_demo
 
 Installation
 -------------
