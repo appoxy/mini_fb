@@ -3,12 +3,75 @@ MiniFB - the simple miniature facebook library
 
 MiniFB is a small, lightweight Ruby library for interacting with the [Facebook API](http://wiki.developers.facebook.com/index.php/API).
 
+Support
+--------
+
+Join our Discussion Group at: http://groups.google.com/group/mini_fb
+
 Installation
 -------------
 
-We're using gemcutter so be sure to have gemcutter as a source, then: 
-
     gem install mini_fb
+
+
+Facebook Graph API
+==================
+
+For an overview of what this is all about, see http://developers.facebook.com/docs/api.
+
+Authentication
+--------------
+
+Facebook now uses Oauth 2 for authentication, but don't worry, this part is easy.
+
+    # Get your oauth url
+    @oauth_url = MiniFB.oauth_url(FB_APP_ID, # your Facebook App ID (NOT API_KEY)
+                                  "http://www.yoursite.com/sessions/create", # redirect url
+                                  :scope=>MiniFB.scopes.join(",")) # This asks for all permissions
+    # Have your users click on a link to @oauth_url
+    .....
+    # Then in your /sessions/create
+    access_token_hash = MiniFB.oauth_access_token(FB_APP_ID, "http://www.yoursite.com/sessions/create", FB_SECRET, params[:code])
+    @access_token = access_token_hash["access_token"]
+    # TODO: This is where you'd want to store the token in your database
+    # but for now, we'll just keep it in the cookie so we don't need a database
+    cookies[:access_token] = @access_token
+
+That's it. You now need to hold onto this access_token. We've put it in a cookie for now, but you probably
+want to store it in your database or something.
+
+Getting Data from Facebook
+--------------------------
+
+It's very simple:
+
+    @id = {some ID of something in facebook} || "me"
+    @type = {some facebook type like feed, friends, or photos} # (optional) nil will just return the object data directly
+    @response_hash = MiniFB.get(@access_token, @id, :type=>@type)
+
+Posting Data to Facebook
+------------------------
+
+Also pretty simple:
+
+    @id = {some ID of something in facebook}
+    @type = {some type of post like comments, likes, feed} # required here
+    @response_hash = MiniFB.post(@access_token, @id, :type=>@type)
+
+
+Logging
+-------
+
+To enabled logging:
+
+    MiniFB.enable_logging
+
+
+Original Facebook API
+=====================
+
+This API will probably go away at some point, so you should use the Graph API above in most cases.
+
 
 General Usage
 -------------
@@ -85,10 +148,3 @@ This is as simple as calling:
     @fb.call("photos.upload", "filename"=>"<full path to file>")
 
 The file_name parameter will be used as the file data.
-
-
-Support
---------
-
-Join our Discussion Group at: http://groups.google.com/group/mini_fb
-

@@ -1,6 +1,8 @@
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
+require 'rest_client'
+require 'hashie'
 
 module MiniFB
 
@@ -296,6 +298,97 @@ module MiniFB
         login_url << "&next=#{options[:next]}" if options[:next]
         login_url << "&canvas" if options[:canvas]
         login_url
+    end
+
+    def self.graph_base
+        "https://graph.facebook.com/"
+    end
+
+    # options:
+    #   - scope: comma separated list of extends permissions. see http://developers.facebook.com/docs/authentication/permissions
+    def self.oauth_url(app_id, redirect_uri, options={})
+        oauth_url = "#{graph_base}oauth/authorize"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
+    end
+
+    # returns a hash with one value being 'access_token', the other being 'expires'
+    def self.oauth_access_token(app_id, redirect_uri, secret, code)
+        oauth_url = "#{graph_base}oauth/access_token"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&client_secret=#{secret}"
+        oauth_url << "&code=#{URI.escape(code)}"
+        resp = RestClient.get oauth_url
+        puts 'resp=' + resp.body.to_s if @@logging
+        params = {}
+        params_array = resp.split("&")
+        params_array.each do |p|
+            ps = p.split("=")
+            params[ps[0]] = ps[1]
+        end
+        return params
+    end
+
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    def self.get(access_token, id, options={})
+        url = "#{graph_base}#{id}"
+        url << "/#{options[:type]}" if options[:type]
+        url << "?access_token=#{URI.escape(access_token)}"
+        url << "&metadata=1" if options[:metadata]
+        puts 'url=' + url if @@logging
+        begin
+            resp = RestClient.get url
+        rescue RestClient::Exception => ex
+            puts ex.http_code.to_s
+            puts 'ex.http_body=' + ex.http_body if @@logging
+            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
+            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+        end
+        puts 'resp=' + resp.body.to_s if @@logging
+        res_hash = JSON.parse(resp.body)
+        res_hash = Hashie::Mash.new(res_hash)
+        return res_hash
+    end
+
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    def self.post(access_token, id, options={})
+        url = "#{graph_base}#{id}"
+        url << "/#{options[:type]}" if options[:type]
+        params = {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        puts 'url=' + url if @@logging
+        begin
+            resp = RestClient.post url, params
+        rescue RestClient::Exception => ex
+            puts ex.http_code.to_s
+            puts 'ex.http_body=' + ex.http_body if @@logging
+            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good json response
+            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+        end
+        puts 'resp=' + resp.body.to_s if @@logging
+        res_hash = JSON.parse(resp.body)
+        res_hash = Hashie::Mash.new(res_hash)
+        return res_hash
+    end
+
+    # Returns all available scopes.
+    def self.scopes
+        all_scopes = []
+        scope_names = ["about_me", "activities", "birthday", "education_history", "events", "groups",
+                       "interests", "likes",
+                       "location", "notes", "online_presence", "photo_video_tags", "photos", "relationships",
+                       "religion_politics", "status", "videos", "website", "work_history"]
+        scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x}
+        all_scopes << "read_friendlists"
+        all_scopes << "read_stream"
+        all_scopes
     end
 
     # This function expects arguments as a hash, so
