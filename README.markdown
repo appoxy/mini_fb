@@ -55,6 +55,9 @@ It's very simple:
     @id = {some ID of something in facebook} || "me"
     @type = {some facebook type like feed, friends, or photos} # (optional) nil will just return the object data directly
     @response_hash = MiniFB.get(@access_token, @id, :type=>@type)
+    # @response_hash is a hash, but also allows object like syntax for instance, the following is true:
+    @response_hash["user"] == @response_hash.user
+    
 
 Posting Data to Facebook
 ------------------------
