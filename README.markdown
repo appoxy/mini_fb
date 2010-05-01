@@ -68,6 +68,10 @@ Also pretty simple:
     @type = {some type of post like comments, likes, feed} # required here
     @response_hash = MiniFB.post(@access_token, @id, :type=>@type)
 
+FQL
+---
+
+FQL is 
 
 Logging
 -------
