@@ -71,7 +71,8 @@ Also pretty simple:
 FQL
 ---
 
-FQL is 
+    my_query = "select uid,a,b,c from users where ...."
+    @res = MiniFB.fql(@access_token, my_query)
 
 Logging
 -------
