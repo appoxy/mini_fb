@@ -258,23 +258,23 @@ module MiniFB
     # Parses cookies in order to extract the facebook cookie and parse it into a useable hash
     #
     # options:
-    # * api_key - the connect applications facebook API key
+    # * app_id - the connect applications app_id (some users may find they have to use their facebook API key)
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
-    def MiniFB.parse_cookie_information(api_key, cookies)
-      return nil if cookies["fbs_#{api_key}"].nil?
-      Hash[*cookies["fbs_#{api_key}"].split('&').map{|v| v.split('=', 2) }.flatten]
+    def MiniFB.parse_cookie_information(app_id, cookies)
+      return nil if cookies["fbs_#{app_id}"].nil?
+      Hash[*cookies["fbs_#{app_id}"].split('&').map{|v| v.gsub('"', '').split('=', 2) }.flatten]
     end
     
     # Validates that the cookies sent by the user are those that were set by facebook. Since your
     # secret is only known by you and facebook it is used to sign all of the cookies set.
     #
     # options:
-    # * api_key - the connect applications facebook API key
+    # * app_id - the connect applications app_id (some users may find they have to use their facebook API key)
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
-    def MiniFB.verify_cookie_signature(api_key, secret, cookies)
-      fb_keys = MiniFB.parse_cookie_information(api_key, cookies)
+    def MiniFB.verify_cookie_signature(app_id, secret, cookies)
+      fb_keys = MiniFB.parse_cookie_information(app_id, cookies)
       return false if fb_keys.nil?
       
       signature = fb_keys.delete('sig')

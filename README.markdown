@@ -63,11 +63,11 @@ Then add the following script to the page where you put the login button so it l
 Define an fb_connect method in your login/sessions controller like so:
 
      def fb_connect
-        @fb_info = MiniFB.parse_cookie_information(FB_API_KEY, cookies)
+        @fb_info = MiniFB.parse_cookie_information(FB_APP_ID, cookies) # some users may have to use their API rather than the app. ID.
         puts "uid=#{@fb_info['uid']}"
         puts "session=#{@fb_info['session_key']}"
         
-        if MiniFB.verify_cookie_signature(FB_API_KEY, FB_SECRET, cookies)
+        if MiniFB.verify_cookie_signature(FB_APP_ID, FB_SECRET, cookies)
           # And here you would create the user if it doesn't already exist, then redirect them to wherever you want.
         else
           # The cookies may have been modified as the signature does not match
