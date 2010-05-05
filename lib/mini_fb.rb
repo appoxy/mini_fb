@@ -339,7 +339,7 @@ module MiniFB
         url << "/#{options[:type]}" if options[:type]
         url << "?access_token=#{URI.escape(access_token)}"
         url << "&metadata=1" if options[:metadata]
-        return fetch url
+        return fetch(url)
     end
 
     def self.fetch(url, options={})
@@ -376,7 +376,7 @@ module MiniFB
         params = {}
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        return fetch url, :params=>params, :method=>:post
+        return fetch(url, :params=>params, :method=>:post)
 
     end
 
@@ -385,7 +385,7 @@ module MiniFB
         url << "?access_token=#{URI.escape(access_token)}"
         url << "&query=#{URI.escape(fql_query)}"
         url << "&format=JSON"
-        return fetch url
+        return fetch(url)
     end
 
     # Returns all available scopes.
