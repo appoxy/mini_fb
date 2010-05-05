@@ -344,8 +344,8 @@ module MiniFB
 
     def self.fetch(url, options={})
         puts 'url=' + url if @@logging
-        begin
-            if options[:type] == :post
+        begin            
+            if options[:method] == :post              
                 resp = RestClient.post url, options[:params]
             else
                 resp = RestClient.get url
@@ -372,11 +372,14 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     def self.post(access_token, id, options={})
         url = "#{graph_base}#{id}"
-        url << "/#{options[:type]}" if options[:type]
+        url << "/#{options[:type]}" && options.delete(:type) if options[:type]
         params = {}
+        options.each do |key,value|
+          params[key] = "#{value}"
+        end  
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        return fetch(url, :params=>params, :method=>:post)
+        return fetch(url, :params => params, :method => :post)
 
     end
 
