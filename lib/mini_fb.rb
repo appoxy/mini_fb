@@ -56,8 +56,8 @@ module MiniFB
             return MiniFB.call(api_key, secret_key, method, params.update("session_key"=>session_key))
         end
 
-
     end
+
     class User
         FIELDS = [:uid, :status, :political, :pic_small, :name, :quotes, :is_app_user, :tv, :profile_update_time, :meeting_sex, :hs_info, :timezone, :relationship_status, :hometown_location, :about_me, :wall_count, :significant_other_id, :pic_big, :music, :work_history, :sex, :religion, :notes_count, :activities, :pic_square, :movies, :has_added_app, :education_history, :birthday, :birthday_date, :first_name, :meeting_for, :last_name, :interests, :current_location, :pic, :books, :affiliations, :locale, :profile_url, :proxied_email, :email, :email_hashes, :allowed_restrictions, :pic_with_logo, :pic_big_with_logo, :pic_small_with_logo, :pic_square_with_logo]
         STANDARD_FIELDS = [:uid, :first_name, :last_name, :name, :timezone, :birthday, :sex, :affiliations, :locale, :profile_url, :proxied_email, :email]
@@ -175,15 +175,13 @@ module MiniFB
                 response = Net::HTTP.post_form( URI.parse(FB_URL), post_params(kwargs))
             rescue SocketError => err
                 # why are we catching this and throwing as different error?  hmmm..
-#                raise IOError.new( "Cannot connect to the facebook server: " + err )
+                # raise IOError.new( "Cannot connect to the facebook server: " + err )
                 raise err
             end
         end
 
-
         # Handle response
         return response.body if custom_format
-
 
         body = response.body
 
@@ -404,7 +402,7 @@ module MiniFB
         options[:token] = access_token
         options[:format] = "json"        
         method = (options[:method]) ? options[:method]: :get
-        options.delete(:method)        
+        options.delete(:method) if options[:method]
         return fetch(url, :params => options, :method => method)
     end
 
