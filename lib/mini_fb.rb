@@ -350,9 +350,17 @@ module MiniFB
             else
                 resp = RestClient.get url
             end
+  
             puts 'resp=' + resp.body.to_s if @@logging
-            res_hash = JSON.parse(resp.body)
-            if res_hash.is_a? Array # fql queries return this
+            
+            begin          
+              res_hash = JSON.parse(resp.body)
+            rescue
+              # quick fix for things like stream.publish that don't return json
+              res_hash = JSON.parse("{\"response\": #{resp.body.to_s}}")
+            end  
+            
+            if res_hash.is_a? Array  # fql  return this
                 res_hash.collect! {|x| Hashie::Mash.new(x) }
             else
                 res_hash = Hashie::Mash.new(res_hash)
@@ -389,6 +397,15 @@ module MiniFB
         url << "&query=#{URI.escape(fql_query)}"
         url << "&format=JSON"
         return fetch(url)
+    end
+        
+    def self.rest(access_token, api_method, options={})
+        url = "https://api.facebook.com/method/#{api_method}"  
+        options[:token] = access_token
+        options[:format] = "json"        
+        method = (options[:method]) ? options[:method]: :get
+        options.delete(:method)        
+        return fetch(url, :params => options, :method => method)
     end
 
     # Returns all available scopes.
