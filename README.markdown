@@ -97,6 +97,26 @@ The most general case is to use MiniFB.call method:
 
 Which simply returns the parsed json response from Facebook.
 
+
+Oauth 2.0 Authentication and Original Rest Api
+-------------
+
+You can use the Graph api Oauth 2.0 token with original api methods. BEWARE: This has only been tested against stream.publish at present.
+
+	MiniFB.rest(@access_token, "rest.api.method", options)
+
+	eg:
+
+ 	response = MiniFB.rest(@access_token, "stream.publish", {
+			:uid => @user_id, 
+  			:to  =>  @to_user_id,  
+  			:message => "....message.....",
+			:method => :post
+		})
+		
+the :method will default to :get if no value is supplied and all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
+
+
 Some Higher Level Objects for Common Uses
 ----------------------
 
