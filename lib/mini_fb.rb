@@ -329,6 +329,7 @@ module MiniFB
         return params
     end
 
+    # Gets data from the Facebook Graph API
     # options:
     #   - type: eg: feed, home, etc
     #   - metadata: to include metadata in response. true/false
@@ -373,12 +374,14 @@ module MiniFB
 
     end
 
+    # Posts data to the Facebook Graph API
     # options:
     #   - type: eg: feed, home, etc
     #   - metadata: to include metadata in response. true/false
     def self.post(access_token, id, options={})
         url = "#{graph_base}#{id}"
-        url << "/#{options[:type]}" && options.delete(:type) if options[:type]
+        url << "/#{options[:type]}" if options[:type]
+        options.delete(:type)
         params = {}
         options.each do |key,value|
           params[key] = "#{value}"
@@ -389,6 +392,7 @@ module MiniFB
 
     end
 
+    # Executes an FQL query
     def self.fql(access_token, fql_query, options={})
         url = "https://api.facebook.com/method/fql.query"
         url << "?access_token=#{URI.escape(access_token)}"
@@ -396,7 +400,8 @@ module MiniFB
         url << "&format=JSON"
         return fetch(url)
     end
-        
+
+    # Uses new Oauth 2 authentication against old Facebook REST API
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"  
         options[:token] = access_token
