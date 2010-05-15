@@ -3,12 +3,91 @@ MiniFB - the simple miniature facebook library
 
 MiniFB is a small, lightweight Ruby library for interacting with the [Facebook API](http://wiki.developers.facebook.com/index.php/API).
 
+Brought to you by: [![Appoxy](http://www.simpledeployr.com/images/global/appoxy-small.png)](http://www.appoxy.com)
+
+Support
+--------
+
+Join our Discussion Group at: <http://groups.google.com/group/mini_fb>
+
+Demo Rails Application
+-------------------
+
+There is a demo Rails app that uses mini_fb graph api at: [http://github.com/appoxy/mini_fb_demo](http://github.com/appoxy/mini_fb_demo)
+
 Installation
 -------------
 
-We're using gemcutter so be sure to have gemcutter as a source, then: 
-
     gem install mini_fb
+
+
+Facebook Graph API
+==================
+
+For an overview of what this is all about, see <http://developers.facebook.com/docs/api>.
+
+Authentication
+--------------
+
+Facebook now uses Oauth 2 for authentication, but don't worry, this part is easy.
+
+    # Get your oauth url
+    @oauth_url = MiniFB.oauth_url(FB_APP_ID, # your Facebook App ID (NOT API_KEY)
+                                  "http://www.yoursite.com/sessions/create", # redirect url
+                                  :scope=>MiniFB.scopes.join(",")) # This asks for all permissions
+    # Have your users click on a link to @oauth_url
+    .....
+    # Then in your /sessions/create
+    access_token_hash = MiniFB.oauth_access_token(FB_APP_ID, "http://www.yoursite.com/sessions/create", FB_SECRET, params[:code])
+    @access_token = access_token_hash["access_token"]
+    # TODO: This is where you'd want to store the token in your database
+    # but for now, we'll just keep it in the cookie so we don't need a database
+    cookies[:access_token] = @access_token
+
+That's it. You now need to hold onto this access_token. We've put it in a cookie for now, but you probably
+want to store it in your database or something.
+
+Getting Data from Facebook
+--------------------------
+
+It's very simple:
+
+    @id = {some ID of something in facebook} || "me"
+    @type = {some facebook type like feed, friends, or photos} # (optional) nil will just return the object data directly
+    @response_hash = MiniFB.get(@access_token, @id, :type=>@type)
+    # @response_hash is a hash, but also allows object like syntax for instance, the following is true:
+    @response_hash["user"] == @response_hash.user
+
+See <http://developers.facebook.com/docs/api> for the available types.
+
+Posting Data to Facebook
+------------------------
+
+Also pretty simple:
+
+    @id = {some ID of something in facebook}
+    @type = {some type of post like comments, likes, feed} # required here
+    @response_hash = MiniFB.post(@access_token, @id, :type=>@type)
+
+FQL
+---
+
+    my_query = "select uid,a,b,c from users where ...."
+    @res = MiniFB.fql(@access_token, my_query)
+
+Logging
+-------
+
+To enabled logging:
+
+    MiniFB.enable_logging
+
+
+Original Facebook API
+=====================
+
+This API will probably go away at some point, so you should use the Graph API above in most cases.
+
 
 General Usage
 -------------
@@ -18,6 +97,26 @@ The most general case is to use MiniFB.call method:
     user_hash = MiniFB.call(FB_API_KEY, FB_SECRET, "Users.getInfo", "session_key"=>@session_key, "uids"=>@uid, "fields"=>User.all_fields)
 
 Which simply returns the parsed json response from Facebook.
+
+
+Oauth 2.0 Authentication and Original Rest Api
+-------------
+
+You can use the Graph api Oauth 2.0 token with original api methods. BEWARE: This has only been tested against stream.publish at present.
+
+	MiniFB.rest(@access_token, "rest.api.method", options)
+
+	eg:
+
+ 	response = MiniFB.rest(@access_token, "stream.publish", {
+			:uid => @user_id, 
+  			:to  =>  @to_user_id,  
+  			:message => "....message.....",
+			:method => :post
+		})
+		
+the :method will default to :get if no value is supplied and all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
+
 
 Some Higher Level Objects for Common Uses
 ----------------------
@@ -84,10 +183,3 @@ This is as simple as calling:
     @fb.call("photos.upload", "filename"=>"<full path to file>")
 
 The file_name parameter will be used as the file data.
-
-
-Support
---------
-
-Join our Discussion Group at: http://groups.google.com/group/mini_fb
-
