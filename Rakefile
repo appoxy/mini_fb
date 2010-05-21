@@ -10,6 +10,7 @@ begin
         gemspec.authors = ["Travis Reeder", "Aaron Hurley"]
         gemspec.files = FileList['lib/**/*.rb']
         gemspec.add_dependency 'rest-client'
+        gemspec.add_dependency 'hashie'
     end
 rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
