@@ -406,7 +406,7 @@ module MiniFB
     # Uses new Oauth 2 authentication against old Facebook REST API
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"  
-        options[:token] = access_token
+        options[:access_token] = access_token
         options[:format] = "json"        
         method = (options[:method]) ? options[:method]: :get
         options.delete(:method) if options[:method]
