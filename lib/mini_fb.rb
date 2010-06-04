@@ -349,6 +349,9 @@ module MiniFB
             if options[:method] == :post              
                 resp = RestClient.post url, options[:params]
             else
+                if options[:params] && options[:params].size > 0
+                     url += '?' + options[:params].each.map {|k,v| "%s=%s" % [k,v]}.join('&')
+                end
                 resp = RestClient.get url
             end
   
@@ -407,8 +410,8 @@ module MiniFB
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"  
         options[:access_token] = access_token
-        options[:format] = "json"        
-        method = (options[:method]) ? options[:method]: :get
+        options[:format] = "json"
+        method = (options[:method]) ? options[:method] : :get
         options.delete(:method) if options[:method]
         return fetch(url, :params => options, :method => method)
     end
