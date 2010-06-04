@@ -310,7 +310,9 @@ module MiniFB
         oauth_url = "#{graph_base}oauth/authorize"
         oauth_url << "?client_id=#{app_id}"
         oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
-        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
+#        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
+        oauth_url << ("&" + options.each.map { |k,v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
+        oauth_url
     end
 
     # returns a hash with one value being 'access_token', the other being 'expires'
