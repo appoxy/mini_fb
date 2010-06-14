@@ -36,9 +36,9 @@ module MiniFB
     class FaceBookError < StandardError
         attr_accessor :code
         # Error that happens during a facebook call.
-        def initialize( error_code, error_msg )
+        def initialize(error_code, error_msg)
             @code = error_code
-            super("Facebook error #{error_code}: #{error_msg}" )
+            super("Facebook error #{error_code}: #{error_msg}")
         end
     end
 
@@ -152,7 +152,7 @@ module MiniFB
 
     # The secret argument should be an instance of FacebookSecret
     # to hide value from simple introspection.
-    def MiniFB.call( api_key, secret, method, kwargs )
+    def MiniFB.call(api_key, secret, method, kwargs)
 
         puts 'kwargs=' + kwargs.inspect if @@logging
 
@@ -185,7 +185,7 @@ module MiniFB
         else
 
             begin
-                response = Net::HTTP.post_form( URI.parse(FB_URL), post_params(kwargs))
+                response = Net::HTTP.post_form(URI.parse(FB_URL), post_params(kwargs))
             rescue SocketError => err
                 # why are we catching this and throwing as different error?  hmmm..
                 # raise IOError.new( "Cannot connect to the facebook server: " + err )
@@ -200,9 +200,9 @@ module MiniFB
 
         puts 'response=' + body.inspect if @@logging
         begin
-            data = JSON.parse( body )
-            if data.include?( "error_msg" )
-                raise FaceBookError.new( data["error_code"] || 1, data["error_msg"] )
+            data = JSON.parse(body)
+            if data.include?("error_msg")
+                raise FaceBookError.new(data["error_code"] || 1, data["error_msg"])
             end
 
         rescue JSON::ParserError => ex
@@ -242,12 +242,12 @@ module MiniFB
 
         # Call Facebook with POST multipart/form-data request
         uri = URI.parse(FB_URL)
-        Net::HTTP.start(uri.host) {|http| http.post uri.path, query, header}
+        Net::HTTP.start(uri.host) { |http| http.post uri.path, query, header }
     end
 
     # Returns true is signature is valid, false otherwise.
-    def MiniFB.verify_signature( secret, arguments )
-        signature = arguments.delete( "fb_sig" )
+    def MiniFB.verify_signature(secret, arguments)
+        signature = arguments.delete("fb_sig")
         return false if signature.nil?
 
         unsigned = Hash.new
@@ -263,12 +263,12 @@ module MiniFB
 
         arg_string = String.new
         signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
-        if Digest::MD5.hexdigest( arg_string + secret ) == signature
+        if Digest::MD5.hexdigest(arg_string + secret) == signature
             return true
         end
         return false
     end
-    
+
     # Parses cookies in order to extract the facebook cookie and parse it into a useable hash
     #
     # options:
@@ -276,8 +276,8 @@ module MiniFB
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
     def MiniFB.parse_cookie_information(app_id, cookies)
-      return nil if cookies["fbs_#{app_id}"].nil?
-      Hash[*cookies["fbs_#{app_id}"].split('&').map{|v| v.gsub('"', '').split('=', 2) }.flatten]
+        return nil if cookies["fbs_#{app_id}"].nil?
+        Hash[*cookies["fbs_#{app_id}"].split('&').map { |v| v.gsub('"', '').split('=', 2) }.flatten]
     end
 
     # Validates that the cookies sent by the user are those that were set by facebook. Since your
@@ -288,17 +288,17 @@ module MiniFB
     # * secret - the connect application secret
     # * cookies - the cookies given by facebook - it is ok to just pass all of the cookies, the method will do the filtering for you.
     def MiniFB.verify_cookie_signature(app_id, secret, cookies)
-      fb_keys = MiniFB.parse_cookie_information(app_id, cookies)
-      return false if fb_keys.nil?
-      
-      signature = fb_keys.delete('sig')
-      return signature == Digest::MD5.hexdigest(fb_keys.map{|k,v| "#{k}=#{v}"}.sort.join + secret)
+        fb_keys = MiniFB.parse_cookie_information(app_id, cookies)
+        return false if fb_keys.nil?
+
+        signature = fb_keys.delete('sig')
+        return signature == Digest::MD5.hexdigest(fb_keys.map { |k, v| "#{k}=#{v}" }.sort.join + secret)
     end
-    
+
     # <b>DEPRECATED:</b> Please use <tt>verify_cookie_signature</tt> instead.
     def MiniFB.verify_connect_signature(api_key, secret, cookies)
-      warn "DEPRECATION WARNING: 'verify_connect_signature' has been renamed to 'verify_cookie_signature' as Facebook no longer calls this 'connect'"
-      MiniFB.verify_cookie_signature(api_key, secret, cookies)
+        warn "DEPRECATION WARNING: 'verify_connect_signature' has been renamed to 'verify_cookie_signature' as Facebook no longer calls this 'connect'"
+        MiniFB.verify_cookie_signature(api_key, secret, cookies)
     end
 
     # Returns the login/add app url for your application.
@@ -324,7 +324,7 @@ module MiniFB
         oauth_url << "?client_id=#{app_id}"
         oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
 #        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
-        oauth_url << ("&" + options.each.map { |k,v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
+        oauth_url << ("&" + options.each.map { |k, v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
         oauth_url
     end
 
@@ -368,7 +368,15 @@ module MiniFB
     def self.post(access_token, id, options={})
         url = "#{graph_base}#{id}"
         url << "/#{options[:type]}" if options[:type]
+        options.delete(:type)
         params = options[:params] || {}
+        options.each do |key, value|
+            if value.kind_of?(File)
+                params[key] = value
+            else
+                params[key] = "#{value}"
+            end
+        end
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
         return fetch(url, :params => params, :method => :post)
@@ -398,27 +406,27 @@ module MiniFB
 
     def self.fetch(url, options={})
         puts 'url=' + url if @@logging
-        begin            
-            if options[:method] == :post              
+        begin
+            if options[:method] == :post
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                     url += '?' + options[:params].each.map {|k,v| URI.escape("%s=%s" % [k,v])}.join('&')
+                    url += '?' + options[:params].each.map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
                 end
                 resp = RestClient.get url
             end
-  
+
             puts 'resp=' + resp.body.to_s if @@logging
-            
-            begin          
-              res_hash = JSON.parse(resp.body)
+
+            begin
+                res_hash = JSON.parse(resp.body)
             rescue
-              # quick fix for things like stream.publish that don't return json
-              res_hash = JSON.parse("{\"response\": #{resp.body.to_s}}")
-            end  
-            
-            if res_hash.is_a? Array  # fql  return this
-                res_hash.collect! {|x| Hashie::Mash.new(x) }
+                # quick fix for things like stream.publish that don't return json
+                res_hash = JSON.parse("{\"response\": #{resp.body.to_s}}")
+            end
+
+            if res_hash.is_a? Array # fql  return this
+                res_hash.collect! { |x| Hashie::Mash.new(x) }
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
@@ -439,7 +447,7 @@ module MiniFB
                        "interests", "likes",
                        "location", "notes", "online_presence", "photo_video_tags", "photos", "relationships",
                        "religion_politics", "status", "videos", "website", "work_history"]
-        scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x}
+        scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x }
         all_scopes << "read_friendlists"
         all_scopes << "read_stream"
         all_scopes << "publish_stream"
@@ -464,9 +472,9 @@ module MiniFB
     # to hide value from simple introspection.
 #
     # DEPRECATED, use verify_signature instead
-    def MiniFB.validate( secret, arguments )
+    def MiniFB.validate(secret, arguments)
 
-        signature = arguments.delete( "fb_sig" )
+        signature = arguments.delete("fb_sig")
         return arguments if signature.nil?
 
         unsigned = Hash.new
@@ -482,7 +490,7 @@ module MiniFB
 
         arg_string = String.new
         signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
-        if Digest::MD5.hexdigest( arg_string + secret ) != signature
+        if Digest::MD5.hexdigest(arg_string + secret) != signature
             unsigned # Hash is incorrect, return only unsigned fields.
         else
             unsigned.merge signed
@@ -494,7 +502,7 @@ module MiniFB
         # Proc cannot be dumped or introspected by normal tools.
         attr_reader :value
 
-        def initialize( value )
+        def initialize(value)
             @value = Proc.new { value }
         end
     end
