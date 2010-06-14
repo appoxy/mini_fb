@@ -1,4 +1,6 @@
 require 'test/unit'
+require 'uri'
+
 class MiniFBTests < Test::Unit::TestCase
 
 
@@ -24,6 +26,10 @@ class MiniFBTests < Test::Unit::TestCase
 
     def test_photos
         
+    end
+
+    def test_uri_escape
+        assert URI.escape("x=y") == "x=y"
     end
 
 end

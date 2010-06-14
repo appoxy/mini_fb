@@ -1,3 +1,16 @@
+#MiniFB - the simple miniature facebook library
+#MiniFB is a small, lightweight Ruby library for interacting with the Facebook API.
+#
+#Brought to you by: www.appoxy.com
+#
+#Support
+#
+#Join our Discussion Group at: http://groups.google.com/group/mini_fb
+#
+#Demo Rails Application
+#
+#There is a demo Rails app that uses mini_fb graph api at: http://github.com/appoxy/mini_fb_demo
+
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
@@ -337,13 +350,51 @@ module MiniFB
     # options:
     #   - type: eg: feed, home, etc
     #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
     def self.get(access_token, id, options={})
         url = "#{graph_base}#{id}"
         url << "/#{options[:type]}" if options[:type]
-        url << "?access_token=#{URI.escape(access_token)}"
-        url << "&metadata=1" if options[:metadata]
+        params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
         return fetch(url)
     end
+
+    # Posts data to the Facebook Graph API
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
+    def self.post(access_token, id, options={})
+        url = "#{graph_base}#{id}"
+        url << "/#{options[:type]}" if options[:type]
+        params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        return fetch(url, :params => params, :method => :post)
+
+    end
+
+    # Executes an FQL query
+    def self.fql(access_token, fql_query, options={})
+        url = "https://api.facebook.com/method/fql.query"
+        params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        params["query"] = fql_query
+        params["format"] = "JSON"
+        return fetch(url, :params => params)
+    end
+
+    # Uses new Oauth 2 authentication against old Facebook REST API
+    def self.rest(access_token, api_method, options={})
+        url = "https://api.facebook.com/method/#{api_method}"
+        params = options[:params] || {}
+        params[:access_token] = access_token
+        params[:format] = "JSON"
+        return fetch(url, :params => params, :method => method)
+    end
+
 
     def self.fetch(url, options={})
         puts 'url=' + url if @@logging
@@ -352,7 +403,7 @@ module MiniFB
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                     url += '?' + options[:params].each.map {|k,v| "%s=%s" % [k,v]}.join('&')
+                     url += '?' + options[:params].each.map {|k,v| URI.escape("%s=%s" % [k,v])}.join('&')
                 end
                 resp = RestClient.get url
             end
@@ -379,43 +430,6 @@ module MiniFB
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
         end
 
-    end
-
-    # Posts data to the Facebook Graph API
-    # options:
-    #   - type: eg: feed, home, etc
-    #   - metadata: to include metadata in response. true/false
-    def self.post(access_token, id, options={})
-        url = "#{graph_base}#{id}"
-        url << "/#{options[:type]}" if options[:type]
-        options.delete(:type)
-        params = {}
-        options.each do |key,value|
-          params[key] = "#{value}"
-        end  
-        params["access_token"] = "#{(access_token)}"
-        params["metadata"] = "1" if options[:metadata]
-        return fetch(url, :params => params, :method => :post)
-
-    end
-
-    # Executes an FQL query
-    def self.fql(access_token, fql_query, options={})
-        url = "https://api.facebook.com/method/fql.query"
-        url << "?access_token=#{URI.escape(access_token)}"
-        url << "&query=#{URI.escape(fql_query)}"
-        url << "&format=JSON"
-        return fetch(url)
-    end
-
-    # Uses new Oauth 2 authentication against old Facebook REST API
-    def self.rest(access_token, api_method, options={})
-        url = "https://api.facebook.com/method/#{api_method}"  
-        options[:access_token] = access_token
-        options[:format] = "json"
-        method = (options[:method]) ? options[:method] : :get
-        options.delete(:method) if options[:method]
-        return fetch(url, :params => options, :method => method)
     end
 
     # Returns all available scopes.
