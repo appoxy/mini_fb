@@ -428,6 +428,7 @@ module MiniFB
         scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x}
         all_scopes << "read_friendlists"
         all_scopes << "read_stream"
+        all_scopes << "publish_stream"
         all_scopes
     end
 
