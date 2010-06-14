@@ -357,7 +357,7 @@ module MiniFB
         params = options[:params] || {}
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        return fetch(url)
+        return fetch(url, :params => params)
     end
 
     # Posts data to the Facebook Graph API
@@ -405,14 +405,16 @@ module MiniFB
 
 
     def self.fetch(url, options={})
-        puts 'url=' + url if @@logging
+
         begin
             if options[:method] == :post
+                puts 'url_post=' + url if @@logging
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
                     url += '?' + options[:params].each.map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
                 end
+                puts 'url_get=' + url if @@logging
                 resp = RestClient.get url
             end
 
