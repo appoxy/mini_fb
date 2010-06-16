@@ -324,7 +324,7 @@ module MiniFB
         oauth_url << "?client_id=#{app_id}"
         oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
 #        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
-        oauth_url << ("&" + options.each.map { |k, v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
+        oauth_url << ("&" + options.map { |k, v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
         oauth_url
     end
 
@@ -412,7 +412,7 @@ module MiniFB
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].each.map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
+                    url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
                 end
                 puts 'url_get=' + url if @@logging
                 resp = RestClient.get url
