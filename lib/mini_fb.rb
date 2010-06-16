@@ -432,6 +432,11 @@ module MiniFB
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
+            
+            if res_hash.include?("error_msg")
+                raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
+            end
+            
             return res_hash
         rescue RestClient::Exception => ex
             puts ex.http_code.to_s
