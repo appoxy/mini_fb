@@ -357,7 +357,8 @@ module MiniFB
         params = options[:params] || {}
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        return fetch(url, :params => params)
+        options[:params] = params
+        return fetch(url, options)
     end
 
     # Posts data to the Facebook Graph API
@@ -379,7 +380,9 @@ module MiniFB
         end
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
-        return fetch(url, :params => params, :method => :post)
+        options[:params] = params
+        options[:method] = :post
+        return fetch(url, options)
 
     end
 
@@ -391,16 +394,20 @@ module MiniFB
         params["metadata"] = "1" if options[:metadata]
         params["query"] = fql_query
         params["format"] = "JSON"
-        return fetch(url, :params => params)
+        options[:params] = params
+        return fetch(url, options)
     end
 
     # Uses new Oauth 2 authentication against old Facebook REST API
+     # options:
+    #   - params: Any additional parameters you would like to submit
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"
         params = options[:params] || {}
         params[:access_token] = access_token
         params[:format] = "JSON"
-        return fetch(url, :params => params, :method => method)
+        options[:params] = params
+        return fetch(url, options)
     end
 
 
