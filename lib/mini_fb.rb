@@ -313,6 +313,37 @@ module MiniFB
         login_url
     end
 
+    # Manages access_token and locale params for an OAuth connection
+    class OAuthSession
+
+        def initialize(access_token, locale="en_US")
+            @access_token = access_token
+            @locale = locale
+        end
+
+        def get(id, options={})
+            MiniFB.get(@access_token, id, session_options(options))
+        end
+
+        def post(id, options={})
+            MiniFB.post(@access_token, id, session_options(options))
+        end
+
+        def fql(fql_query, options={})
+            MiniFB.fql(@access_token, fql_query, session_options(options))
+        end
+
+        def rest(api_method, options={})
+            MiniFB.rest(@access_token, api_method, session_options(options))
+        end
+
+        private
+            def session_options(options)
+                (options[:params] ||= {})[:locale] ||= @locale
+                options
+            end
+    end
+
     def self.graph_base
         "https://graph.facebook.com/"
     end
@@ -439,11 +470,11 @@ module MiniFB
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
-            
+
             if res_hash.include?("error_msg")
                 raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
             end
-            
+
             return res_hash
         rescue RestClient::Exception => ex
             puts ex.http_code.to_s
