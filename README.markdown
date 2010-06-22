@@ -154,9 +154,24 @@ Get a MiniFB::OAuthSession with a Spanish locale:
 Using the session object to make requests:
 
     @fb.get('117199051648010')
-    @fb.post('me', :type => :feed, :params => {:message => "This is me from MiniFB"})
-    @fb.fql('SELECT user_id FROM like WHERE object_id="117199051648010"')
-    @fb.rest('notes.create', :params => {:title => "ToDo", :content => "Try MiniFB"})
+    @fb.post('me', :type => :feed, :params => {
+      :message => "This is me from MiniFB"
+    })
+    @fb.fql('SELECT id FROM object_url WHERE url="http://www.imdb.com/title/tt1250777/"')
+    @fb.rest('notes.create', :params => {
+      :title => "ToDo", :content => "Try MiniFB"
+    })
+
+Getting graph objects through the session:
+
+    @fb.me
+    @fb.me.name
+    @fb.me.connections
+    @fb.me.feed
+
+    @ssp = @fb.graph_object('117199051648010')
+    @ssp.mission
+    @ssp.photos
 
 
 Facebook Connect

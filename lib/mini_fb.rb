@@ -337,11 +337,75 @@ module MiniFB
             MiniFB.rest(@access_token, api_method, session_options(options))
         end
 
+        # Returns a GraphObject for the given id
+        def graph_object(id)
+            MiniFB::GraphObject.new(self, id)
+        end
+
+        # Returns and caches a GraphObject for the user
+        def me
+            @me ||= graph_object('me')
+        end
+
         private
             def session_options(options)
                 (options[:params] ||= {})[:locale] ||= @locale
                 options
             end
+    end
+
+    # Wraps a graph object for easily accessing its connections
+    class GraphObject
+        # Creates a GraphObject using an OAuthSession or access_token
+        def initialize(session_or_token, id)
+            @oauth_session = if session_or_token.is_a?(MiniFB::OAuthSession)
+                session_or_token
+            else
+                MiniFB::OAuthSession.new(session_or_token)
+            end
+            @id = id
+            @object = @oauth_session.get(id, :metadata => true)
+            @connections_cache = {}
+        end
+
+        def inspect
+            "<##{self.class.name} #{@object.inspect}>"
+        end
+
+        def connections
+            @object.metadata.connections.keys
+        end
+
+        undef :id, :type
+
+        def methods
+            super + @object.keys.include?(key) + connections.include?(key)
+        end
+
+        def respond_to?(method)
+            @object.keys.include?(key) || connections.include?(key) || super
+        end
+
+        def keys
+            @object.keys
+        end
+
+        def [](key)
+            @object[key]
+        end
+
+        def method_missing(method, *args, &block)
+            key = method.to_s
+            if @object.keys.include?(key)
+                @object[key]
+            elsif @connections_cache.has_key?(key)
+                @connections_cache[key]
+            elsif connections.include?(key)
+                @connections_cache[key] = @oauth_session.get(@id, :type => key)
+            else
+                super
+            end
+        end
     end
 
     def self.graph_base
