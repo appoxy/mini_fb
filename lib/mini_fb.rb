@@ -333,10 +333,14 @@ module MiniFB
             MiniFB.fql(@access_token, fql_query, session_options(options))
         end
 
+        def multifql(fql_queries, options={})
+            MiniFB.multifql(@access_token, fql_queries, session_options(options))
+        end
+
         def rest(api_method, options={})
             MiniFB.rest(@access_token, api_method, session_options(options))
         end
-
+        
         # Returns a GraphObject for the given id
         def graph_object(id)
             MiniFB::GraphObject.new(self, id)
@@ -493,6 +497,22 @@ module MiniFB
         return fetch(url, options)
     end
 
+    # Executes multiple FQL queries
+    # Example:
+    #
+    # MiniFB.multifql(access_token, { :statuses => "SELECT status_id, message FROM status WHERE uid = 12345",
+    #                                 :privacy => "SELECT object_id, description FROM privacy WHERE object_id IN (SELECT status_id FROM #statuses)" })
+    def self.multifql(access_token, fql_queries, options={})
+      url = "https://api.facebook.com/method/fql.multiquery"
+      params = options[:params] || {}
+      params["access_token"] = "#{(access_token)}"
+      params["metadata"] = "1" if options[:metadata]
+      params["queries"] = JSON[fql_queries]
+      params[:format] = "JSON"
+      options[:params] = params
+      return fetch(url, options)
+    end
+    
     # Uses new Oauth 2 authentication against old Facebook REST API
      # options:
     #   - params: Any additional parameters you would like to submit
