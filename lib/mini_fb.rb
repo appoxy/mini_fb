@@ -487,16 +487,21 @@ module MiniFB
 
     # Returns all available scopes.
     def self.scopes
-        all_scopes = []
-        scope_names = ["about_me", "activities", "birthday", "education_history", "events", "groups",
-                       "interests", "likes",
-                       "location", "notes", "online_presence", "photo_video_tags", "photos", "relationships",
-                       "religion_politics", "status", "videos", "website", "work_history"]
-        scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x }
-        all_scopes << "read_friendlists"
-        all_scopes << "read_stream"
-        all_scopes << "publish_stream"
-        all_scopes
+        scopes = %w{
+            about_me activities birthday education_history events groups
+            hometown interests likes location notes online_presence
+            photo_video_tags photos relationships religion_politics
+            status videos website work_history
+        }
+        scopes.map! do |scope|
+            ["user_#{scope}", "friends_#{scope}"]
+        end.flatten!
+
+        scopes += %w{
+          read_insights read_stream read_mailbox read_friendlists read_requests
+          email ads_management xmpp_login
+          publish_stream create_event rsvp_event sms offline_access
+        }
     end
 
     # This function expects arguments as a hash, so
