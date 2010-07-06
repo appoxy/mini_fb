@@ -540,13 +540,13 @@ module MiniFB
                 resp = RestClient.get url
             end
 
-            puts 'resp=' + resp.body.to_s if @@logging
+            puts 'resp=' + resp.to_s if @@logging
 
             begin
-                res_hash = JSON.parse(resp.body)
+                res_hash = JSON.parse(resp.to_s)
             rescue
                 # quick fix for things like stream.publish that don't return json
-                res_hash = JSON.parse("{\"response\": #{resp.body.to_s}}")
+                res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
             end
 
             if res_hash.is_a? Array # fql  return this
