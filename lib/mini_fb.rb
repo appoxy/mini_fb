@@ -313,6 +313,105 @@ module MiniFB
         login_url
     end
 
+    # Manages access_token and locale params for an OAuth connection
+    class OAuthSession
+
+        def initialize(access_token, locale="en_US")
+            @access_token = access_token
+            @locale = locale
+        end
+
+        def get(id, options={})
+            MiniFB.get(@access_token, id, session_options(options))
+        end
+
+        def post(id, options={})
+            MiniFB.post(@access_token, id, session_options(options))
+        end
+
+        def fql(fql_query, options={})
+            MiniFB.fql(@access_token, fql_query, session_options(options))
+        end
+
+        def multifql(fql_queries, options={})
+            MiniFB.multifql(@access_token, fql_queries, session_options(options))
+        end
+
+        def rest(api_method, options={})
+            MiniFB.rest(@access_token, api_method, session_options(options))
+        end
+        
+        # Returns a GraphObject for the given id
+        def graph_object(id)
+            MiniFB::GraphObject.new(self, id)
+        end
+
+        # Returns and caches a GraphObject for the user
+        def me
+            @me ||= graph_object('me')
+        end
+
+        private
+            def session_options(options)
+                (options[:params] ||= {})[:locale] ||= @locale
+                options
+            end
+    end
+
+    # Wraps a graph object for easily accessing its connections
+    class GraphObject
+        # Creates a GraphObject using an OAuthSession or access_token
+        def initialize(session_or_token, id)
+            @oauth_session = if session_or_token.is_a?(MiniFB::OAuthSession)
+                session_or_token
+            else
+                MiniFB::OAuthSession.new(session_or_token)
+            end
+            @id = id
+            @object = @oauth_session.get(id, :metadata => true)
+            @connections_cache = {}
+        end
+
+        def inspect
+            "<##{self.class.name} #{@object.inspect}>"
+        end
+
+        def connections
+            @object.metadata.connections.keys
+        end
+
+        undef :id, :type
+
+        def methods
+            super + @object.keys.include?(key) + connections.include?(key)
+        end
+
+        def respond_to?(method)
+            @object.keys.include?(key) || connections.include?(key) || super
+        end
+
+        def keys
+            @object.keys
+        end
+
+        def [](key)
+            @object[key]
+        end
+
+        def method_missing(method, *args, &block)
+            key = method.to_s
+            if @object.keys.include?(key)
+                @object[key]
+            elsif @connections_cache.has_key?(key)
+                @connections_cache[key]
+            elsif connections.include?(key)
+                @connections_cache[key] = @oauth_session.get(@id, :type => key)
+            else
+                super
+            end
+        end
+    end
+
     def self.graph_base
         "https://graph.facebook.com/"
     end
@@ -398,6 +497,22 @@ module MiniFB
         return fetch(url, options)
     end
 
+    # Executes multiple FQL queries
+    # Example:
+    #
+    # MiniFB.multifql(access_token, { :statuses => "SELECT status_id, message FROM status WHERE uid = 12345",
+    #                                 :privacy => "SELECT object_id, description FROM privacy WHERE object_id IN (SELECT status_id FROM #statuses)" })
+    def self.multifql(access_token, fql_queries, options={})
+      url = "https://api.facebook.com/method/fql.multiquery"
+      params = options[:params] || {}
+      params["access_token"] = "#{(access_token)}"
+      params["metadata"] = "1" if options[:metadata]
+      params["queries"] = JSON[fql_queries]
+      params[:format] = "JSON"
+      options[:params] = params
+      return fetch(url, options)
+    end
+    
     # Uses new Oauth 2 authentication against old Facebook REST API
      # options:
     #   - params: Any additional parameters you would like to submit
@@ -439,11 +554,11 @@ module MiniFB
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
-            
+
             if res_hash.include?("error_msg")
                 raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
             end
-            
+
             return res_hash
         rescue RestClient::Exception => ex
             puts ex.http_code.to_s
@@ -456,16 +571,21 @@ module MiniFB
 
     # Returns all available scopes.
     def self.scopes
-        all_scopes = []
-        scope_names = ["about_me", "activities", "birthday", "education_history", "events", "groups",
-                       "interests", "likes",
-                       "location", "notes", "online_presence", "photo_video_tags", "photos", "relationships",
-                       "religion_politics", "status", "videos", "website", "work_history"]
-        scope_names.each { |x| all_scopes << "user_" + x; all_scopes << "friends_" + x }
-        all_scopes << "read_friendlists"
-        all_scopes << "read_stream"
-        all_scopes << "publish_stream"
-        all_scopes
+        scopes = %w{
+            about_me activities birthday education_history events groups
+            hometown interests likes location notes online_presence
+            photo_video_tags photos relationships religion_politics
+            status videos website work_history
+        }
+        scopes.map! do |scope|
+            ["user_#{scope}", "friends_#{scope}"]
+        end.flatten!
+
+        scopes += %w{
+          read_insights read_stream read_mailbox read_friendlists read_requests
+          email ads_management xmpp_login
+          publish_stream create_event rsvp_event sms offline_access
+        }
     end
 
     # This function expects arguments as a hash, so

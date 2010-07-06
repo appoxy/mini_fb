@@ -104,18 +104,16 @@ Oauth 2.0 Authentication and Original Rest Api
 
 You can use the Graph api Oauth 2.0 token with original api methods. BEWARE: This has only been tested against stream.publish at present.
 
-	MiniFB.rest(@access_token, "rest.api.method", options)
+    MiniFB.rest(@access_token, "rest.api.method", options)
 
-	eg:
+eg:
 
- 	response = MiniFB.rest(@access_token, "stream.publish", {
-			:uid => @user_id, 
-  			:to  =>  @to_user_id,  
-  			:message => "....message.....",
-			:method => :post
-		})
-		
-the :method will default to :get if no value is supplied and all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
+    response = MiniFB.rest(@access_token, "stream.publish", :params => {
+      :uid => @user_id, :target_id => @target_user_id,
+      :message => "Hello other user!"
+    })
+    
+all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
 
 
 Some Higher Level Objects for Common Uses
@@ -144,6 +142,37 @@ Or profile photos:
 Or if you want other photos, try:
 
     photos = @fb.photos("pids"=>[12343243,920382343,9208348])
+
+
+Higher Level Objects with OAuth2
+--------------------------------
+
+Get a MiniFB::OAuthSession with a Spanish locale:
+
+    @fb = MiniFB::OAuthSession.new(access_token, 'es_ES')
+
+Using the session object to make requests:
+
+    @fb.get('117199051648010')
+    @fb.post('me', :type => :feed, :params => {
+      :message => "This is me from MiniFB"
+    })
+    @fb.fql('SELECT id FROM object_url WHERE url="http://www.imdb.com/title/tt1250777/"')
+    @fb.rest('notes.create', :params => {
+      :title => "ToDo", :content => "Try MiniFB"
+    })
+
+Getting graph objects through the session:
+
+    @fb.me
+    @fb.me.name
+    @fb.me.connections
+    @fb.me.feed
+
+    @ssp = @fb.graph_object('117199051648010')
+    @ssp.mission
+    @ssp.photos
+
 
 Facebook Connect
 ----------------
