@@ -652,7 +652,6 @@ module MiniFB
                 post_params[k] = v
             end
         end
-        puts post_params.inspect
         post_params
     end
 
