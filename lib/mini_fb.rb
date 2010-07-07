@@ -380,7 +380,7 @@ module MiniFB
             @object.metadata.connections.keys
         end
 
-        undef :id, :type
+#        undef :id, :type
 
         def methods
             super + @object.keys.include?(key) + connections.include?(key)
