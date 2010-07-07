@@ -340,7 +340,7 @@ module MiniFB
         def rest(api_method, options={})
             MiniFB.rest(@access_token, api_method, session_options(options))
         end
-        
+
         # Returns a GraphObject for the given id
         def graph_object(id)
             MiniFB::GraphObject.new(self, id)
@@ -352,10 +352,10 @@ module MiniFB
         end
 
         private
-            def session_options(options)
-                (options[:params] ||= {})[:locale] ||= @locale
-                options
-            end
+        def session_options(options)
+            (options[:params] ||= {})[:locale] ||= @locale
+            options
+        end
     end
 
     # Wraps a graph object for easily accessing its connections
@@ -380,7 +380,9 @@ module MiniFB
             @object.metadata.connections.keys
         end
 
-#        undef :id, :type
+        unless RUBY_VERSION =~ /1\.9/
+            undef :id, :type
+        end
 
         def methods
             super + @object.keys.include?(key) + connections.include?(key)
@@ -503,18 +505,18 @@ module MiniFB
     # MiniFB.multifql(access_token, { :statuses => "SELECT status_id, message FROM status WHERE uid = 12345",
     #                                 :privacy => "SELECT object_id, description FROM privacy WHERE object_id IN (SELECT status_id FROM #statuses)" })
     def self.multifql(access_token, fql_queries, options={})
-      url = "https://api.facebook.com/method/fql.multiquery"
-      params = options[:params] || {}
-      params["access_token"] = "#{(access_token)}"
-      params["metadata"] = "1" if options[:metadata]
-      params["queries"] = JSON[fql_queries]
-      params[:format] = "JSON"
-      options[:params] = params
-      return fetch(url, options)
+        url = "https://api.facebook.com/method/fql.multiquery"
+        params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        params["queries"] = JSON[fql_queries]
+        params[:format] = "JSON"
+        options[:params] = params
+        return fetch(url, options)
     end
-    
+
     # Uses new Oauth 2 authentication against old Facebook REST API
-     # options:
+    # options:
     #   - params: Any additional parameters you would like to submit
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"
