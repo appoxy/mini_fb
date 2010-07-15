@@ -474,6 +474,7 @@ module MiniFB
         params = options[:params] || {}
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
+        params["fields"] = options[:fields].join(",") if options[:fields]
         options[:params] = params
         return fetch(url, options)
     end
