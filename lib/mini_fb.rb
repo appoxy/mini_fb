@@ -247,24 +247,40 @@ module MiniFB
 
     # Returns true is signature is valid, false otherwise.
     def MiniFB.verify_signature(secret, arguments)
-        signature = arguments.delete("fb_sig")
-        return false if signature.nil?
-
-        unsigned = Hash.new
-        signed = Hash.new
-
-        arguments.each do |k, v|
-            if k =~ /^fb_sig_(.*)/ then
-                signed[$1] = v
-            else
-                unsigned[k] = v
+        if arguments.is_a? String
+            #new way: params[:session]
+            session = JSON.parse(arguments)
+        
+            signature = session.delete('sig')
+            return false if signature.nil?
+        
+            arg_string = String.new
+            session.sort.each{|k,v| arg_string << "#{k}=#{v}"}
+            if Digest::MD5.hexdigest(arg_string + secret) == signature
+                return true
             end
-        end
+        else
+            #old way
+      
+            signature = arguments.delete("fb_sig")
+            return false if signature.nil?
 
-        arg_string = String.new
-        signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
-        if Digest::MD5.hexdigest(arg_string + secret) == signature
-            return true
+            unsigned = Hash.new
+            signed = Hash.new
+
+            arguments.each do |k, v|
+                if k =~ /^fb_sig_(.*)/ then
+                    signed[$1] = v
+                else
+                    unsigned[k] = v
+                end
+            end
+
+            arg_string = String.new
+            signed.sort.each { |kv| arg_string << kv[0] << "=" << kv[1] }
+            if Digest::MD5.hexdigest(arg_string + secret) == signature
+                return true
+            end
         end
         return false
     end
