@@ -279,12 +279,12 @@ module MiniFB
       return sig == expected_sig
     end
 
-    # Ruby's implementation of base64 decoding reads the string in multiples of 6 and ignores any extra bytes.
-    # Since facebook does not take this into account, this function fills any string with white spaces up to
-    # the point where it becomes divisible by 6, then it replaces '-' with '+' and '_' with '/' (URL-safe decoding),
-    # and decodes the result.
+    # Ruby's implementation of base64 decoding seems to be reading the string in multiples of 4 and ignoring
+    # any extra characters if there are no white-space characters at the end. Since facebook does not take this
+    # into account, this function fills any string with white spaces up to the point where it becomes divisible
+    # by 4, then it replaces '-' with '+' and '_' with '/' (URL-safe decoding), and decodes the result.
     def self.base64_url_decode(str)
-      str = str + "=" * (6 - str.size % 6) unless str.size % 6 == 0
+      str = str + "=" * (4 - str.size % 4) unless str.size % 4 == 0
       return Base64.decode64(str.tr("-_", "+/"))
     end
 
