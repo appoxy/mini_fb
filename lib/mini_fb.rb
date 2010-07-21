@@ -447,6 +447,19 @@ module MiniFB
         return params
     end
 
+    # Return a JSON object of working Oauth tokens from working session keys, returned in order given
+    def self.oauth_exchange_session(app_id, secret, session_keys)
+      url = "#{graph_base}oauth/exchange_sessions"
+      params = {}
+      params["client_id"] = "#{app_id}"
+      params["client_secret"] = "#{secret}"
+      params["sessions"] = "#{session_keys}"
+      options = {}
+      options[:params] = params
+      options[:method] = :post
+      return fetch(url, options)
+    end
+
     # Gets data from the Facebook Graph API
     # options:
     #   - type: eg: feed, home, etc
