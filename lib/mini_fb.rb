@@ -137,6 +137,8 @@ module MiniFB
                         "dashboard.incrementcount", "dashboard.setcount"
     ].collect { |x| x.downcase }
 
+    # THIS IS FOR THE OLD FACEBOOK API, NOT THE GRAPH ONE. See MiniFB.get and MiniFB.post for Graph API
+    #
     # Call facebook server with a method request. Most keyword arguments
     # are passed directly to the server with a few exceptions.
     # The 'sig' value will always be computed automatically.
