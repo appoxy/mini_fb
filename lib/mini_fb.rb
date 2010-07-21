@@ -16,6 +16,8 @@ require 'erb'
 require 'json' unless defined? JSON
 require 'rest_client'
 require 'hashie'
+require 'base64'
+require 'openssl'
 
 module MiniFB
 
@@ -267,6 +269,23 @@ module MiniFB
             return true
         end
         return false
+    end
+
+    # This function takes the app secret and the signed request, and verifies if the request is valid.
+    def self.verify_signed_request(secret, req)
+      s,p = req.split(".")
+      sig = base64_url_decode(s)
+      expected_sig = OpenSSL::HMAC.digest('SHA256',secret,p.tr("-_", "+/"))
+      return sig == expected_sig
+    end
+
+    # Ruby's implementation of base64 decoding reads the string in multiples of 6 and ignores any extra bytes.
+    # Since facebook does not take this into account, this function fills any string with white spaces up to
+    # the point where it becomes divisible by 6, then it replaces '-' with '+' and '_' with '/' (URL-safe decoding),
+    # and decodes the result.
+    def self.base64_url_decode(str)
+      str = str + "=" * (6 - str.size % 6) unless str.size % 6 == 0
+      return Base64.decode64(str.tr("-_", "+/"))
     end
 
     # Parses cookies in order to extract the facebook cookie and parse it into a useable hash
