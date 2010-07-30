@@ -18,6 +18,7 @@ require 'rest_client'
 require 'hashie'
 require 'base64'
 require 'openssl'
+require 'logger'
 
 module MiniFB
 
@@ -26,13 +27,35 @@ module MiniFB
     FB_API_VERSION = "1.0"
 
     @@logging = false
+    @@log = Logger.new(STDOUT)
+
+    def self.log_level=(level)
+        if level.is_a? Numeric
+            @@log.level = level
+        else
+            @@log.level = case level
+                when :fatal
+                    @@log.level = Logger::FATAL
+                when :error
+                    @@log.level = Logger::ERROR
+                when :warn
+                    @@log.level = Logger::WARN
+                when :info
+                    @@log.level = Logger::INFO
+                when :debug
+                    @@log.level = Logger::DEBUG
+                          end
+        end
+    end
 
     def self.enable_logging
         @@logging = true
+        @@log.level = Logger::DEBUG
     end
 
     def self.disable_logging
         @@logging = false
+        @@log.level = Logger::ERROR
     end
 
     class FaceBookError < StandardError
@@ -254,18 +277,18 @@ module MiniFB
         if arguments.is_a? String
             #new way: params[:session]
             session = JSON.parse(arguments)
-        
+
             signature = session.delete('sig')
             return false if signature.nil?
-        
+
             arg_string = String.new
-            session.sort.each{|k,v| arg_string << "#{k}=#{v}"}
+            session.sort.each { |k, v| arg_string << "#{k}=#{v}" }
             if Digest::MD5.hexdigest(arg_string + secret) == signature
                 return true
             end
         else
             #old way
-      
+
             signature = arguments.delete("fb_sig")
             return false if signature.nil?
 
@@ -291,10 +314,10 @@ module MiniFB
 
     # This function takes the app secret and the signed request, and verifies if the request is valid.
     def self.verify_signed_request(secret, req)
-      s,p = req.split(".")
-      sig = base64_url_decode(s)
-      expected_sig = OpenSSL::HMAC.digest('SHA256',secret,p.tr("-_", "+/"))
-      return sig == expected_sig
+        s, p = req.split(".")
+        sig = base64_url_decode(s)
+        expected_sig = OpenSSL::HMAC.digest('SHA256', secret, p.tr("-_", "+/"))
+        return sig == expected_sig
     end
 
     # Ruby's implementation of base64 decoding seems to be reading the string in multiples of 4 and ignoring
@@ -302,8 +325,8 @@ module MiniFB
     # into account, this function fills any string with white spaces up to the point where it becomes divisible
     # by 4, then it replaces '-' with '+' and '_' with '/' (URL-safe decoding), and decodes the result.
     def self.base64_url_decode(str)
-      str = str + "=" * (4 - str.size % 4) unless str.size % 4 == 0
-      return Base64.decode64(str.tr("-_", "+/"))
+        str = str + "=" * (4 - str.size % 4) unless str.size % 4 == 0
+        return Base64.decode64(str.tr("-_", "+/"))
     end
 
     # Parses cookies in order to extract the facebook cookie and parse it into a useable hash
@@ -401,9 +424,9 @@ module MiniFB
         def initialize(session_or_token, id)
             @oauth_session = if session_or_token.is_a?(MiniFB::OAuthSession)
                 session_or_token
-            else
-                MiniFB::OAuthSession.new(session_or_token)
-            end
+                             else
+                                 MiniFB::OAuthSession.new(session_or_token)
+                             end
             @id = id
             @object = @oauth_session.get(id, :metadata => true)
             @connections_cache = {}
@@ -486,15 +509,32 @@ module MiniFB
 
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
     def self.oauth_exchange_session(app_id, secret, session_keys)
-      url = "#{graph_base}oauth/exchange_sessions"
-      params = {}
-      params["client_id"] = "#{app_id}"
-      params["client_secret"] = "#{secret}"
-      params["sessions"] = "#{session_keys}"
-      options = {}
-      options[:params] = params
-      options[:method] = :post
-      return fetch(url, options)
+        url = "#{graph_base}oauth/exchange_sessions"
+        params = {}
+        params["client_id"] = "#{app_id}"
+        params["client_secret"] = "#{secret}"
+        params["sessions"] = "#{session_keys}"
+        options = {}
+        options[:params] = params
+        options[:method] = :post
+        return fetch(url, options)
+    end
+
+    # Return a JSON object of working Oauth tokens from working session keys, returned in order given
+    def self.authenticate_as_app(app_id, secret)
+        url = "#{graph_base}oauth/access_token"
+        params = {}
+        params["type"] = "client_cred"
+        params["client_id"] = "#{app_id}"
+        params["client_secret"] = "#{secret}"
+#      resp = RestClient.get url
+        options = {}
+        options[:params] = params
+        options[:method] = :get
+        options[:response_type] = :params
+        resp = fetch(url, options)
+        puts 'resp=' + resp.body.to_s if @@logging
+        resp
     end
 
     # Gets data from the Facebook Graph API
@@ -583,23 +623,34 @@ module MiniFB
 
         begin
             if options[:method] == :post
-                puts 'url_post=' + url if @@logging
+                @@log.debug 'url_post=' + url if @@logging
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
                     url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
                 end
-                puts 'url_get=' + url if @@logging
+                @@log.debug 'url_get=' + url if @@logging
                 resp = RestClient.get url
             end
 
-            puts 'resp=' + resp.to_s if @@logging
+            @@log.debug 'resp=' + resp.to_s
 
-            begin
-                res_hash = JSON.parse(resp.to_s)
-            rescue
-                # quick fix for things like stream.publish that don't return json
-                res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
+            if options[:response_type] == :params
+                # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
+                params = {}
+                params_array = resp.split("&")
+                params_array.each do |p|
+                    ps = p.split("=")
+                    params[ps[0]] = ps[1]
+                end
+                return params
+            else
+                begin
+                    res_hash = JSON.parse(resp.to_s)
+                rescue
+                    # quick fix for things like stream.publish that don't return json
+                    res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
+                end
             end
 
             if res_hash.is_a? Array # fql  return this
