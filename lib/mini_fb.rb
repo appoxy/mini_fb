@@ -578,6 +578,22 @@ module MiniFB
 
     end
 
+    # Performs an social graph search
+    # Example:
+    #   MiniFB.search(access_token, :q = 'email@joe.com', :type => 'user')
+    #   MiniFB.search(access_token, :q = 'watermelon',    :type => 'post')
+    def self.search(access_token, options={})
+      url = "#{graph_base}search"
+      params = {}
+      params["access_token"] = "#{(access_token)}"
+      params["q"] = "#{options[:q]}" if options[:q]
+      params["type"] = "#{options[:type]}" if options[:type]
+      params["metadata"] = "1" if options[:metadata]
+      params["format"] = "JSON"
+      options[:params] = params
+      return fetch(url, options)
+    end
+
     # Executes an FQL query
     def self.fql(access_token, fql_query, options={})
         url = "https://api.facebook.com/method/fql.query"
