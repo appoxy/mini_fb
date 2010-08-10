@@ -7,7 +7,7 @@ begin
         gemspec.description = "Tiny facebook library"
         gemspec.email = "travis@appoxy.com"
         gemspec.homepage = "http://github.com/appoxy/mini_fb"
-        gemspec.authors = ["Travis Reeder", "Aaron Hurley"]
+        gemspec.authors = ["Travis Reeder"]
         gemspec.files = FileList['lib/**/*.rb']
         gemspec.add_dependency 'rest-client'
         gemspec.add_dependency 'hashie'
