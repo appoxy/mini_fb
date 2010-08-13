@@ -124,6 +124,13 @@ eg:
       :message => "Hello other user!"
     })
     
+and for file uploads, give the file's (usually an image) path as a string
+
+    response = MiniFB.rest(@access_token, "events.create", :params => {
+      :event_info => { :name => 'My super duper event', :start_date => '2010-03-20 15:30:00' }, 
+      :file => "/path/to/file.jpg"
+    })
+    
 all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
 
 

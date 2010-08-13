@@ -625,11 +625,17 @@ module MiniFB
     # Uses new Oauth 2 authentication against old Facebook REST API
     # options:
     #   - params: Any additional parameters you would like to submit
+    #   - file: A string path to a file that you want POSTed (in events.create for example)
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"
         params = options[:params] || {}
         params[:access_token] = access_token
         params[:format] = "JSON"
+        if params[:file]
+          options[:method] = :post
+          options[:file] = params[:file]
+          params.delete(:file)
+        end
         options[:params] = params
         return fetch(url, options)
     end
@@ -639,7 +645,8 @@ module MiniFB
 
         begin
             if options[:method] == :post
-                @@log.debug 'url_post=' + url if @@logging
+                puts 'url_post=' + url if @@logging
+                options[:params].merge(:nil => File.new(options[:file], 'rb') if options[:file]
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
