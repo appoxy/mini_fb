@@ -646,7 +646,7 @@ module MiniFB
         begin
             if options[:method] == :post
                 puts 'url_post=' + url if @@logging
-                options[:params].merge(:nil => File.new(options[:file], 'rb') if options[:file]
+                options[:params].merge(:nil => File.new(options[:file], 'rb')) if options[:file]
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
