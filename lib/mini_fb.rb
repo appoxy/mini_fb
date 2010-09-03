@@ -676,10 +676,10 @@ module MiniFB
     # Returns all available scopes.
     def self.scopes
         scopes = %w{
-            about_me activities birthday education_history events groups
-            hometown interests likes location notes online_presence
-            photo_video_tags photos relationships religion_politics
-            status videos website work_history
+            about_me activities birthday checkins education_history
+            events groups hometown interests likes location notes
+            online_presence photo_video_tags photos relationships
+            religion_politics status videos website work_history
         }
         scopes.map! do |scope|
             ["user_#{scope}", "friends_#{scope}"]
