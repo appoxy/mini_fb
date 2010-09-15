@@ -102,7 +102,7 @@ Which simply returns the parsed json response from Facebook.
 Oauth 2.0 Authentication and Original Rest Api
 -------------
 
-You can use the Graph api Oauth 2.0 token with original api methods. BEWARE: This has only been tested against stream.publish at present.
+You can use the Graph api Oauth 2.0 token with original api methods. BEWARE: This has only been tested against stream.publish and friends.getAppUsers at present.
 
     MiniFB.rest(@access_token, "rest.api.method", options)
 
