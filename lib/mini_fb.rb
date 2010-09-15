@@ -653,8 +653,13 @@ module MiniFB
                 end
             end
 
-            if res_hash.is_a? Array # fql  return this
+            if res_hash.is_a? Array # fql or certain Rest-api responses (such as 'friends.getAppUsers')
+              # If all values are hashes, this is fql-response - otherwise, let the developer sort it out!
+              if res_hash.all?{|k| k.is_a?(Hash)}              
                 res_hash.collect! { |x| Hashie::Mash.new(x) }
+              else
+                return Hashie::Mash.new({"data" => res_hash})
+              end
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
