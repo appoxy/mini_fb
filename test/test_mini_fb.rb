@@ -45,4 +45,11 @@ class MiniFBTests < Test::Unit::TestCase
         assert URI.escape("x=y") == "x=y"
     end
 
+    def test_signed_request_params
+        # Example request and secret taken from http://developers.facebook.com/docs/authentication/canvas
+        secret = 'secret'
+        req = 'vlXgu64BQGFSQrY0ZcJBZASMvYvTHu9GQ0YM9rjPSso.eyJhbGdvcml0aG0iOiJITUFDLVNIQTI1NiIsIjAiOiJwYXlsb2FkIn0'
+        assert_equal MiniFB.signed_request_params(secret, req), {"0" => "payload"}
+    end
+
 end
