@@ -1,7 +1,10 @@
 require 'test/unit'
 require 'uri'
 require 'yaml'
+require 'rubygems'
 require 'active_support'
+require 'active_support/core_ext/object'
+require 'active_support/core_ext/string/starts_ends_with'
 require '../lib/mini_fb'
 
 class MiniFBTests < Test::Unit::TestCase
