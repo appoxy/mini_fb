@@ -26,6 +26,8 @@ module MiniFB
     FB_URL = "http://api.facebook.com/restserver.php"
     FB_API_VERSION = "1.0"
 
+    UNSAFE_RE = /[^-_.!~*'()a-zA-Z\d;\/?:@=+$,\[\]]/ # URI::REGEXP::UNSAFE == /[^-_.!~*'()a-zA-Z\d;\/?:@&=+$,\[\]]/
+
     @@logging = false
     @@log = Logger.new(STDOUT)
 
@@ -627,7 +629,7 @@ module MiniFB
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
+                    url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v], UNSAFE_RE) }.join('&')
                 end
                 @@log.debug 'url_get=' + url if @@logging
                 resp = RestClient.get url
