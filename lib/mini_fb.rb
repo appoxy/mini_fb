@@ -19,6 +19,7 @@ require 'hashie'
 require 'base64'
 require 'openssl'
 require 'logger'
+require 'htmlentities'
 
 module MiniFB
 
@@ -28,36 +29,40 @@ module MiniFB
 
     UNSAFE_RE = /[^-_.!~*'()a-zA-Z\d;\/?:@=+$,\[\]]/ # URI::REGEXP::UNSAFE == /[^-_.!~*'()a-zA-Z\d;\/?:@&=+$,\[\]]/
 
-    @@logging = false
-    @@log = Logger.new(STDOUT)
+    @logging = false
+    @log = Logger.new(STDOUT)
 
     def self.log_level=(level)
         if level.is_a? Numeric
-            @@log.level = level
+            @log.level = level
         else
-            @@log.level = case level
+            @log.level = case level
                 when :fatal
-                    @@log.level = Logger::FATAL
+                    @log.level = Logger::FATAL
                 when :error
-                    @@log.level = Logger::ERROR
+                    @log.level = Logger::ERROR
                 when :warn
-                    @@log.level = Logger::WARN
+                    @log.level = Logger::WARN
                 when :info
-                    @@log.level = Logger::INFO
+                    @log.level = Logger::INFO
                 when :debug
-                    @@log.level = Logger::DEBUG
+                    @log.level = Logger::DEBUG
                           end
         end
     end
 
     def self.enable_logging
-        @@logging = true
-        @@log.level = Logger::DEBUG
+        @logging = true
+        @log.level = Logger::DEBUG
     end
 
     def self.disable_logging
-        @@logging = false
-        @@log.level = Logger::ERROR
+        @logging = false
+        @log.level = Logger::ERROR
+    end
+
+    def self.htmlentities
+      @coder ||= HTMLEntities.new
     end
 
     class FaceBookError < StandardError
@@ -183,7 +188,7 @@ module MiniFB
     # to hide value from simple introspection.
     def MiniFB.call(api_key, secret, method, kwargs)
 
-        puts 'kwargs=' + kwargs.inspect if @@logging
+        puts 'kwargs=' + kwargs.inspect if @logging
 
         if secret.is_a? String
             secret = FaceBookSecret.new(secret)
@@ -227,7 +232,7 @@ module MiniFB
 
         body = response.body
 
-        puts 'response=' + body.inspect if @@logging
+        puts 'response=' + body.inspect if @logging
         begin
             data = JSON.parse(body)
             if data.include?("error_msg")
@@ -499,7 +504,7 @@ module MiniFB
         oauth_url << "&client_secret=#{secret}"
         oauth_url << "&code=#{URI.escape(code)}"
         resp = RestClient.get oauth_url
-        puts 'resp=' + resp.body.to_s if @@logging
+        puts 'resp=' + resp.body.to_s if @logging
         params = {}
         params_array = resp.split("&")
         params_array.each do |p|
@@ -535,7 +540,7 @@ module MiniFB
         options[:method] = :get
         options[:response_type] = :params
         resp = fetch(url, options)
-        puts 'resp=' + resp.body.to_s if @@logging
+        puts 'resp=' + resp.body.to_s if @logging
         resp
     end
 
@@ -625,17 +630,20 @@ module MiniFB
 
         begin
             if options[:method] == :post
-                @@log.debug 'url_post=' + url if @@logging
+                @log.debug 'url_post=' + url if @logging
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
                     url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v], UNSAFE_RE) }.join('&')
                 end
-                @@log.debug 'url_get=' + url if @@logging
+                @log.debug 'url_get=' + url if @logging
                 resp = RestClient.get url
             end
 
-            @@log.debug 'resp=' + resp.to_s
+            # decode HTML entities
+            resp = htmlentities.decode(resp)
+
+            @log.debug('resp=' + resp.to_s) if @logging
 
             if options[:response_type] == :params
                 # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
@@ -667,8 +675,8 @@ module MiniFB
 
             return res_hash
         rescue RestClient::Exception => ex
-            puts ex.http_code.to_s
-            puts 'ex.http_body=' + ex.http_body if @@logging
+            puts ex.http_code.to_s if @logging
+            puts 'ex.http_body=' + ex.http_body if @logging
             res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
         end
