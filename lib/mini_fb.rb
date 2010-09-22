@@ -396,6 +396,10 @@ module MiniFB
             MiniFB.post(@access_token, id, session_options(options))
         end
 
+        def delete(id, options={})
+            MiniFB.delete(@access_token ,id, session_options(options))
+        end
+
         def fql(fql_query, options={})
             MiniFB.fql(@access_token, fql_query, session_options(options))
         end
@@ -582,9 +586,19 @@ module MiniFB
         options[:params] = params
         options[:method] = :post
         return fetch(url, options)
-
     end
 
+    # Deletes data from the Facebook Graph API
+    def self.delete(access_token, id, options={})
+        url = "#{graph_base}#{id}"
+        url << "/#{options[:type]}" if options[:type]
+        params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        options[:params] = params
+        options[:method] = :delete
+        return fetch(url, options)
+    end
+    
     # Executes an FQL query
     def self.fql(access_token, fql_query, options={})
         url = "https://api.facebook.com/method/fql.query"
@@ -636,8 +650,14 @@ module MiniFB
                 if options[:params] && options[:params].size > 0
                     url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v], UNSAFE_RE) }.join('&')
                 end
-                @log.debug 'url_get=' + url if @logging
-                resp = RestClient.get url
+
+                if (options[:method] == :delete)
+                    @log.debug 'url_delete=' + url if @logging
+                    resp = RestClient.delete url
+                else
+                    @log.debug 'url_get=' + url if @logging
+                    resp = RestClient.get url
+                end
             end
 
             # decode HTML entities
