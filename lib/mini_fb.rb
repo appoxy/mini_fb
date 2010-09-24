@@ -383,9 +383,15 @@ module MiniFB
     # Manages access_token and locale params for an OAuth connection
     class OAuthSession
 
+        attr_reader :access_token
+
         def initialize(access_token, locale="en_US")
             @access_token = access_token
             @locale = locale
+        end
+
+        def uid
+          access_token[/-(\d+)/, 1].try(:to_i)
         end
 
         def get(id, options={})
@@ -598,7 +604,7 @@ module MiniFB
         options[:method] = :delete
         return fetch(url, options)
     end
-    
+
     # Executes an FQL query
     def self.fql(access_token, fql_query, options={})
         url = "https://api.facebook.com/method/fql.query"
