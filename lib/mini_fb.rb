@@ -493,7 +493,7 @@ module MiniFB
     def self.oauth_url(app_id, redirect_uri, options={})
         oauth_url = "#{graph_base}oauth/authorize"
         oauth_url << "?client_id=#{app_id}"
-        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&redirect_uri=#{CGI::escape(redirect_uri)}"
 #        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
         oauth_url << ("&" + options.map { |k, v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
         oauth_url
@@ -503,7 +503,7 @@ module MiniFB
     def self.oauth_access_token(app_id, redirect_uri, secret, code)
         oauth_url = "#{graph_base}oauth/access_token"
         oauth_url << "?client_id=#{app_id}"
-        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&redirect_uri=#{CGI::escape(redirect_uri)}"
         oauth_url << "&client_secret=#{secret}"
         oauth_url << "&code=#{URI.escape(code)}"
         resp = RestClient.get oauth_url
