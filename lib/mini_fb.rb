@@ -20,7 +20,7 @@ require 'base64'
 require 'openssl'
 require 'logger'
 
-require File.join(File.dirname(__FILE__), 'utilities')
+require 'mini_fb/utilities'
 
 module MiniFB
 
