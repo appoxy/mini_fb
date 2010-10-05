@@ -19,9 +19,12 @@ require 'hashie'
 require 'base64'
 require 'openssl'
 require 'logger'
-require 'htmlentities'
+
+require File.join(File.dirname(__FILE__), 'utilities')
 
 module MiniFB
+
+    extend Utilities
 
     # Global constants
     FB_URL = "http://api.facebook.com/restserver.php"
@@ -59,10 +62,6 @@ module MiniFB
     def self.disable_logging
         @logging = false
         @log.level = Logger::ERROR
-    end
-
-    def self.htmlentities
-      @coder ||= HTMLEntities.new
     end
 
     class FaceBookError < StandardError
@@ -437,6 +436,7 @@ module MiniFB
 
     # Wraps a graph object for easily accessing its connections
     class GraphObject
+
         # Creates a GraphObject using an OAuthSession or access_token
         def initialize(session_or_token, id)
             @oauth_session = if session_or_token.is_a?(MiniFB::OAuthSession)
@@ -647,7 +647,6 @@ module MiniFB
 
 
     def self.fetch(url, options={})
-
         begin
             if options[:method] == :post
                 @log.debug 'url_post=' + url if @logging
@@ -666,9 +665,6 @@ module MiniFB
                 end
             end
 
-            # decode HTML entities
-            resp = htmlentities.decode(resp)
-
             @log.debug('resp=' + resp.to_s) if @logging
 
             if options[:response_type] == :params
@@ -685,14 +681,14 @@ module MiniFB
                     res_hash = JSON.parse(resp.to_s)
                 rescue
                     # quick fix for things like stream.publish that don't return json
-                    res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
+                    res_hash = JSON.parse("{\"response\": \"#{resp}\"}")
                 end
             end
 
             if res_hash.is_a? Array # fql  return this
-                res_hash.collect! { |x| Hashie::Mash.new(x) }
+                res_hash.collect! { |x| Hashie::Mash.new(htmlentitydecoder(x)) }
             else
-                res_hash = Hashie::Mash.new(res_hash)
+                res_hash = Hashie::Mash.new(htmlentitydecoder(res_hash))
             end
 
             if res_hash.include?("error_msg")
