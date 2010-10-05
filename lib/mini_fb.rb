@@ -681,7 +681,7 @@ module MiniFB
                     res_hash = JSON.parse(resp.to_s)
                 rescue
                     # quick fix for things like stream.publish that don't return json
-                    res_hash = JSON.parse("{\"response\": \"#{resp}\"}")
+                    res_hash = JSON.parse("{\"response\": #{resp}}")
                 end
             end
 
