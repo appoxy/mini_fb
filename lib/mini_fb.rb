@@ -384,7 +384,7 @@ module MiniFB
 
         attr_reader :access_token
 
-        def initialize(access_token, locale="en_US")
+        def initialize(access_token=nil, locale="en_US")
             @access_token = access_token
             @locale = locale
         end
