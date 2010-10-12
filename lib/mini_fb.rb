@@ -64,14 +64,17 @@ module MiniFB
         @log.level = Logger::ERROR
     end
 
-    class FaceBookError < StandardError
+    class FacebookError < StandardError
         attr_accessor :code
-        # Error that happens during a facebook call.
-        def initialize(error_code, error_msg)
-            @code = error_code
-            super("Facebook error #{error_code}: #{error_msg}")
+
+        def initialize(code, message)
+            @code = code
+            super(message)
         end
     end
+
+    class OAuthError < FacebookError; end;
+    class InvalidAccessTokenError < OAuthError; end;
 
     class Session
         attr_accessor :api_key, :secret_key, :session_key, :uid
@@ -79,7 +82,7 @@ module MiniFB
 
         def initialize(api_key, secret_key, session_key, uid)
             @api_key = api_key
-            @secret_key = FaceBookSecret.new secret_key
+            @secret_key = FacebookSecret.new secret_key
             @session_key = session_key
             @uid = uid
         end
@@ -190,7 +193,7 @@ module MiniFB
         puts 'kwargs=' + kwargs.inspect if @logging
 
         if secret.is_a? String
-            secret = FaceBookSecret.new(secret)
+            secret = FacebookSecret.new(secret)
         end
 
         # Prepare arguments for call
@@ -235,7 +238,7 @@ module MiniFB
         begin
             data = JSON.parse(body)
             if data.include?("error_msg")
-                raise FaceBookError.new(data["error_code"] || 1, data["error_msg"])
+                raise FacebookError.new(data["error_code"] || 1, data["error_msg"])
             end
 
         rescue JSON::ParserError => ex
@@ -563,7 +566,7 @@ module MiniFB
         url = "#{graph_base}#{id}"
         url << "/#{options[:type]}" if options[:type]
         params = options[:params] || {}
-        params["access_token"] = "#{(access_token)}"
+        params["access_token"] = "#{(access_token)}" if access_token
         params["metadata"] = "1" if options[:metadata]
         params["fields"] = options[:fields].join(",") if options[:fields]
         options[:params] = params
@@ -587,7 +590,7 @@ module MiniFB
                 params[key] = "#{value}"
             end
         end
-        params["access_token"] = "#{(access_token)}"
+        params["access_token"] = "#{(access_token)}" if access_token
         params["metadata"] = "1" if options[:metadata]
         options[:params] = params
         options[:method] = :post
@@ -599,7 +602,7 @@ module MiniFB
         url = "#{graph_base}#{id}"
         url << "/#{options[:type]}" if options[:type]
         params = options[:params] || {}
-        params["access_token"] = "#{(access_token)}"
+        params["access_token"] = "#{(access_token)}" if access_token
         options[:params] = params
         options[:method] = :delete
         return fetch(url, options)
@@ -609,7 +612,7 @@ module MiniFB
     def self.fql(access_token, fql_query, options={})
         url = "https://api.facebook.com/method/fql.query"
         params = options[:params] || {}
-        params["access_token"] = "#{(access_token)}"
+        params["access_token"] = "#{(access_token)}" if access_token
         params["metadata"] = "1" if options[:metadata]
         params["query"] = fql_query
         params["format"] = "JSON"
@@ -625,7 +628,7 @@ module MiniFB
     def self.multifql(access_token, fql_queries, options={})
         url = "https://api.facebook.com/method/fql.multiquery"
         params = options[:params] || {}
-        params["access_token"] = "#{(access_token)}"
+        params["access_token"] = "#{(access_token)}" if access_token
         params["metadata"] = "1" if options[:metadata]
         params["queries"] = JSON[fql_queries]
         params[:format] = "JSON"
@@ -639,7 +642,7 @@ module MiniFB
     def self.rest(access_token, api_method, options={})
         url = "https://api.facebook.com/method/#{api_method}"
         params = options[:params] || {}
-        params[:access_token] = access_token
+        params[:access_token] = access_token if access_token
         params[:format] = "JSON"
         options[:params] = params
         return fetch(url, options)
@@ -692,17 +695,30 @@ module MiniFB
             end
 
             if res_hash.include?("error_msg")
-                raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
+              raise initialize_error(res_hash.error_code, Hashie::Mash.new(:error => { :type => "OAuthException", :message => res_hash.error_msg }))
+            end
+            if res_hash.include?("error")
+              raise initialize_error(200, res_hash)
             end
 
             return res_hash
         rescue RestClient::Exception => ex
             puts ex.http_code.to_s if @logging
             puts 'ex.http_body=' + ex.http_body if @logging
-            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
-            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+            res_hash = Hashie::Mash.new(JSON.parse(ex.http_body)) # probably should ensure it has a good response
+            raise initialize_error(ex.http_code, res_hash)
         end
 
+    end
+
+    def self.initialize_error(code, result)
+      klass = case result.error.message
+        when /access token/i: MiniFB::InvalidAccessTokenError
+        else
+          klass_name = result.error.type.sub("Exception", "Error") # Exceptions end in Error in Ruby
+          MiniFB.const_defined?(klass_name) ? MiniFB.const_get(klass_name) : MiniFB::FacebookError
+        end
+      klass.new(code, result.error.message)
     end
 
     # Returns all available scopes.
@@ -767,7 +783,7 @@ module MiniFB
         end
     end
 
-    class FaceBookSecret
+    class FacebookSecret
         # Simple container that stores a secret value.
         # Proc cannot be dumped or introspected by normal tools.
         attr_reader :value
