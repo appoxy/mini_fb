@@ -75,6 +75,7 @@ module MiniFB
 
     class OAuthError < FacebookError; end;
     class InvalidAccessTokenError < OAuthError; end;
+    class GraphMethodError < FacebookError; end;
 
     class Session
         attr_accessor :api_key, :secret_key, :session_key, :uid
@@ -715,7 +716,7 @@ module MiniFB
       klass = case result.error.message
         when /access token/i: MiniFB::InvalidAccessTokenError
         else
-          klass_name = result.error.type.sub("Exception", "Error") # Exceptions end in Error in Ruby
+          klass_name = result.error['type'].sub("Exception", "Error") # Exceptions end in Error in Ruby
           MiniFB.const_defined?(klass_name) ? MiniFB.const_get(klass_name) : MiniFB::FacebookError
         end
       klass.new(code, result.error.message)
