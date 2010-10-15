@@ -633,7 +633,7 @@ module MiniFB
                 resp = RestClient.get url
             end
 
-            @@log.debug 'resp=' + resp.to_s
+            @@log.debug 'resp=' + resp.to_s if @@logging
 
             if options[:response_type] == :params
                 # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
