@@ -695,11 +695,8 @@ module MiniFB
                 res_hash = Hashie::Mash.new(htmlentitydecoder(res_hash))
             end
 
-            if res_hash.include?("error_msg")
-              raise initialize_error(res_hash.error_code, Hashie::Mash.new(:error => { :type => "OAuthException", :message => res_hash.error_msg }))
-            end
-            if res_hash.include?("error")
-              raise initialize_error(200, res_hash)
+            if res_hash.include?("error") || res_hash.include?("error_msg")
+              raise initialize_error(res_hash.error_code, res_hash)
             end
 
             return res_hash
@@ -713,6 +710,9 @@ module MiniFB
     end
 
     def self.initialize_error(code, result)
+      if result.include?("error_msg")
+        result = Hashie::Mash.new(:error => { :type => "OAuthException", :message => result.error_msg })
+      end
       klass = case result.error.message
         when /access token/i: MiniFB::InvalidAccessTokenError
         else
