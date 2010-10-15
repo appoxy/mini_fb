@@ -627,7 +627,7 @@ module MiniFB
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
+                    url += '?' + options[:params].map { |k, v| CGI.escape(k) + '=' + CGI.escape(v) }.join('&')
                 end
                 @@log.debug 'url_get=' + url if @@logging
                 resp = RestClient.get url
