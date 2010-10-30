@@ -12,6 +12,7 @@ begin
         gemspec.add_dependency 'rest-client'
         gemspec.add_dependency 'hashie'
     end
+    Jeweler::GemcutterTasks.new
 rescue LoadError
     puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end

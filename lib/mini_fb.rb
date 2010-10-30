@@ -618,7 +618,6 @@ module MiniFB
         return fetch(url, options)
     end
 
-
     def self.fetch(url, options={})
 
         begin
@@ -651,6 +650,10 @@ module MiniFB
                     # quick fix for things like stream.publish that don't return json
                     res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
                 end
+            end
+            
+            if res_hash.size == 1 && res_hash["data"]
+                res_hash = res_hash["data"]
             end
 
             if res_hash.is_a? Array # fql  return this
@@ -691,6 +694,7 @@ module MiniFB
           publish_stream create_event rsvp_event sms offline_access
         }
     end
+
 
     # This function expects arguments as a hash, so
     # it is agnostic to different POST handling variants in ruby.
