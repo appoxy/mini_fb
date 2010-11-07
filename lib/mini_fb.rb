@@ -652,9 +652,10 @@ module MiniFB
                 end
             end
             
-            if res_hash.size == 1 && res_hash["data"]
-                res_hash = res_hash["data"]
-            end
+#This is bad because it strips off paging parameters and what not.
+            #            if res_hash.size == 1 && res_hash["data"]
+#                res_hash = res_hash["data"]
+#            end
 
             if res_hash.is_a? Array # fql  return this
                 res_hash.collect! { |x| Hashie::Mash.new(x) }
