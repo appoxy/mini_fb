@@ -483,7 +483,7 @@ module MiniFB
     def self.oauth_url(app_id, redirect_uri, options={})
         oauth_url = "#{graph_base}oauth/authorize"
         oauth_url << "?client_id=#{app_id}"
-        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&redirect_uri=#{CGI.escape(redirect_uri)}"
 #        oauth_url << "&scope=#{options[:scope]}" if options[:scope]
         oauth_url << ("&" + options.map { |k, v| "%s=%s" % [k, v] }.join('&')) unless options.empty?
         oauth_url
@@ -493,9 +493,9 @@ module MiniFB
     def self.oauth_access_token(app_id, redirect_uri, secret, code)
         oauth_url = "#{graph_base}oauth/access_token"
         oauth_url << "?client_id=#{app_id}"
-        oauth_url << "&redirect_uri=#{URI.escape(redirect_uri)}"
+        oauth_url << "&redirect_uri=#{CGI.escape(redirect_uri)}"
         oauth_url << "&client_secret=#{secret}"
-        oauth_url << "&code=#{URI.escape(code)}"
+        oauth_url << "&code=#{CGI.escape(code)}"
         resp = RestClient.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
         params = {}
@@ -626,7 +626,9 @@ module MiniFB
                 resp = RestClient.post url, options[:params]
             else
                 if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].map { |k, v| URI.escape("%s=%s" % [k, v]) }.join('&')
+                    url += '?' + options[:params].map do |k, v|
+                      "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"
+                    end.join('&')
                 end
                 @@log.debug 'url_get=' + url if @@logging
                 resp = RestClient.get url
