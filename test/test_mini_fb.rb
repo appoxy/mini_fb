@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'uri'
 require 'yaml'
-require 'active_support'
+require 'active_support/core_ext'
 require '../lib/mini_fb'
 
 class MiniFBTests < Test::Unit::TestCase
@@ -11,6 +11,8 @@ class MiniFBTests < Test::Unit::TestCase
         @config = File.open(File.expand_path("~/.mini_fb_tests.yml")) { |yf| YAML::load(yf) }
         puts @config.inspect
         MiniFB.log_level = :debug
+
+#        MiniFB.oauth_url(@config["fb_api_key"], @config["fb_secret"])
     end
 
     def teardown
@@ -27,6 +29,23 @@ class MiniFBTests < Test::Unit::TestCase
     # Test signature verification.
     def test_signature
 
+    end
+
+    def test_me_with_fields
+        fields = {
+                'interests' => [:name],
+                'activities'=> [:name],
+                'music'     => [:name],
+                'videos'    => [:name],
+                'television'=> [:name],
+                'movies'    => [:name],
+                'likes'     => [:name],
+                'work'      => [:name],
+                'education' => [:name],
+                'books'     => [:name]
+        }
+
+        snap   = MiniFB.get(access_token, 'me', :fields =>fields.keys)
     end
 
     def test_basic_calls

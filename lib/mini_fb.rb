@@ -154,7 +154,8 @@ module MiniFB
     end
 
     BAD_JSON_METHODS = ["users.getloggedinuser", "auth.promotesession", "users.hasapppermission",
-                        "Auth.revokeExtendedPermission", "pages.isAdmin", "pages.isFan",
+                        "Auth.revokeExtendedPermission", "auth.revokeAuthorization",
+                        "pages.isAdmin", "pages.isFan",
                         "stream.publish",
                         "dashboard.addNews", "dashboard.addGlobalNews", "dashboard.publishActivity",
                         "dashboard.incrementcount", "dashboard.setcount"
