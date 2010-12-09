@@ -387,7 +387,7 @@ module MiniFB
         end
         
         def multiget(ids, options={})
-            MiniFB.get(@access_token, ids, session_options(options))
+            MiniFB.multiget(@access_token, ids, session_options(options))
         end
 
         def post(id, options={})
