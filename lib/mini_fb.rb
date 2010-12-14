@@ -652,14 +652,9 @@ module MiniFB
                     res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
                 end
             end
-            
-#This is bad because it strips off paging parameters and what not.
-            #            if res_hash.size == 1 && res_hash["data"]
-#                res_hash = res_hash["data"]
-#            end
 
             if res_hash.is_a? Array # fql  return this
-                res_hash.collect! { |x| Hashie::Mash.new(x) }
+                res_hash.collect! { |x| x.is_a?(Hash) ? Hashie::Mash.new(x) : x }
             else
                 res_hash = Hashie::Mash.new(res_hash)
             end
@@ -670,7 +665,7 @@ module MiniFB
 
             return res_hash
         rescue RestClient::Exception => ex
-            puts ex.http_code.to_s
+            puts "ex.http_code=" + ex.http_code.to_s
             puts 'ex.http_body=' + ex.http_body if @@logging
             res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
