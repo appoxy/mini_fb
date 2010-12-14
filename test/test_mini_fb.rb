@@ -3,7 +3,7 @@ require 'rspec'
 require 'uri'
 require 'yaml'
 require 'active_support/core_ext'
-require '../lib/mini_fb'
+require_relative '../lib/mini_fb'
 
 describe "Some Feature" do
 
@@ -43,6 +43,15 @@ describe "Some Feature" do
         res.should include("access_token")
         res["access_token"].should match(/^#{@config['fb_app_id']}/)#starts_with?(@config["fb_app_id"].to_s)
     end
+
+
+    it 'test_signed_request_params' do
+        # Example request and secret taken from http://developers.facebook.com/docs/authentication/canvas
+        secret = 'secret'
+        req = 'vlXgu64BQGFSQrY0ZcJBZASMvYvTHu9GQ0YM9rjPSso.eyJhbGdvcml0aG0iOiJITUFDLVNIQTI1NiIsIjAiOiJwYXlsb2FkIn0'
+        assert_equal MiniFB.signed_request_params(secret, req), {"0" => "payload"}
+    end
+
 end
 
 
@@ -66,4 +75,5 @@ def test_me_with_fields
     }
 
     snap   = MiniFB.get(access_token, 'me', :fields =>fields.keys)
+
 end

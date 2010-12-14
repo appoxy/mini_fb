@@ -321,6 +321,16 @@ module MiniFB
         return sig == expected_sig
     end
 
+    # This function decodes the data sent by Facebook and returns a Hash.
+    # See: http://developers.facebook.com/docs/authentication/canvas
+    def self.signed_request_params(secret, req)
+        s, p = req.split(".")
+        p = base64_url_decode(p)
+        h = JSON.parse(p)
+        h.delete('algorithm') if h['algorithm'] == 'HMAC-SHA256'
+        h
+    end
+
     # Ruby's implementation of base64 decoding seems to be reading the string in multiples of 4 and ignoring
     # any extra characters if there are no white-space characters at the end. Since facebook does not take this
     # into account, this function fills any string with white spaces up to the point where it becomes divisible
