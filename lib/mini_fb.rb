@@ -250,7 +250,7 @@ module MiniFB
 
     def MiniFB.post_upload(filename, kwargs, mime_type = 'image/jpeg')
         content = File.open(filename, 'rb') { |f| f.read }
-        boundary = Digest::MD5.hexdigest(content)
+        boundary = "END_OF_PART_#{rand(1 << 64).to_s(16)}"
         header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
 
         # Build query
