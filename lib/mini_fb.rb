@@ -19,6 +19,7 @@ require 'hashie'
 require 'base64'
 require 'openssl'
 require 'logger'
+require 'mime/types'
 
 module MiniFB
 
@@ -253,6 +254,10 @@ module MiniFB
         boundary = "END_OF_PART_#{rand(1 << 64).to_s(16)}"
         header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
 
+        # Make sure the filename has the correct extension.
+        # Facebook is really picky about this.
+        remote_filename = ensure_correct_extension(File.basename(filename), mime_type)
+
         # Build query
         query = ''
         kwargs.each { |a, v|
@@ -263,7 +268,7 @@ module MiniFB
         }
         query <<
                 "--#{boundary}\r\n" <<
-                "Content-Disposition: form-data; filename=\"#{File.basename(filename)}\"\r\n" <<
+                "Content-Disposition: form-data; filename=\"#{remote_filename}\"\r\n" <<
                 "Content-Transfer-Encoding: binary\r\n" <<
                 "Content-Type: #{mime_type}\r\n\r\n" <<
                 content <<
@@ -395,6 +400,15 @@ module MiniFB
         login_url << "&next=#{options[:next]}" if options[:next]
         login_url << "&canvas" if options[:canvas]
         login_url
+    end
+
+
+    def self.ensure_correct_extension(filename, mime_type)
+        allowed_extensions = MIME::Types[mime_type].first.extensions
+        extension = File.extname(filename)[1 .. -1]
+        if !allowed_extensions.include? extension
+          filename += '.' + allowed_extensions.first
+        end
     end
 
     # Manages access_token and locale params for an OAuth connection
@@ -793,4 +807,5 @@ module MiniFB
         end.sort.join
         Digest::MD5.hexdigest([raw_string, secret].join)
     end
+
 end
