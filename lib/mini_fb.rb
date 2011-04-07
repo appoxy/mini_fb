@@ -529,6 +529,8 @@ module MiniFB
     end
 
     # Returns a hash containing test user id, access_token, and login URL
+    # 'installed' is a boolean indicating whether the user has the app installed or not
+    # 'permissions' is a string containing comma-separated FB permissions that the test user granted to your app
     def self.create_test_user(app_id, secret, installed, permissions)
         url = "#{graph_base}#{app_id}/accounts/test-users"
         params = {}
