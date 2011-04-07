@@ -518,6 +518,16 @@ module MiniFB
         return params
     end
 
+    # Returns a string containing your app access token
+    def self.app_access_token(app_id, secret)
+        oauth_url = "#{graph_base}oauth/access_token"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&client_secret=#{secret}"
+        oauth_url << "&grant_type=client_credentials"
+        resp = RestClient.get oauth_url
+        return resp.body.split('=')[1]
+    end
+
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
     def self.oauth_exchange_session(app_id, secret, session_keys)
         url = "#{graph_base}oauth/exchange_sessions"
