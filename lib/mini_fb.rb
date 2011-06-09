@@ -677,7 +677,7 @@ module MiniFB
         rescue RestClient::Exception => ex
             puts "ex.http_code=" + ex.http_code.to_s
             puts 'ex.http_body=' + ex.http_body if @@logging
-            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
+            res_hash = JSON.parse(ex.http_body) if ex.http_body
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
         end
 
