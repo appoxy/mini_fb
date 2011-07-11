@@ -677,8 +677,11 @@ module MiniFB
           puts "ex.http_code=" + ex.http_code.to_s
           puts 'ex.http_body=' + ex.http_body if @@logging
           res_hash = JSON.parse(ex.http_body) if ex.http_body && ex.http_body.size > 2
-          error_msg = "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}" if res_hash.is_a?(Hash)
-          raise MiniFB::FaceBookError.new(ex.http_code, error_msg || ex.inspect)
+          error_msg = ex.inspect
+          if res_hash.is_a?(Hash) && res_hash["error"]
+            error_msg = "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}"
+          end
+          raise MiniFB::FaceBookError.new(ex.http_code, error_msg)
         end
 
     end
