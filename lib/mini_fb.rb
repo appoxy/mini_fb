@@ -317,7 +317,7 @@ module MiniFB
     def self.verify_signed_request(secret, req)
         s, p = req.split(".")
         sig = base64_url_decode(s)
-        expected_sig = OpenSSL::HMAC.digest('SHA256', secret, p.tr("-_", "+/"))
+        expected_sig = OpenSSL::HMAC.digest('SHA256', secret, p)
         return sig == expected_sig
     end
 
