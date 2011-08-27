@@ -563,6 +563,28 @@ module MiniFB
         options[:params] = params
         return fetch(url, options)
     end
+    
+    # Gets multiple data from the Facebook Graph API
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
+    # Example:
+    #
+    # MiniFB.multiget(access_token, [123, 234])
+    #
+    # Can throw a connection Timeout if there is too many items
+    def self.multiget(access_token, ids, options={})
+        url = "#{graph_base}"
+        url << "#{options[:type]}" if options[:type]
+        params = options[:params] || {}
+        params["ids"] = ids.join(',')
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        params["fields"] = options[:fields].join(",") if options[:fields]
+        options[:params] = params
+        return fetch(url, options)
+    end
 
     # Posts data to the Facebook Graph API
     # options:
