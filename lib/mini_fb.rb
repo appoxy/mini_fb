@@ -518,6 +518,24 @@ module MiniFB
         return params
     end
 
+    # returns a hash with one value being 'access_token', the other being 'expires'
+    def self.fb_exchange_token(app_id, secret, access_token)
+        oauth_url = "#{graph_base}oauth/access_token"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&client_secret=#{secret}"
+        oauth_url << "&grant_type=fb_exchange_token"
+        oauth_url << "&fb_exchange_token=#{CGI.escape(access_token)}"
+        resp = RestClient.get oauth_url
+        puts 'resp=' + resp.body.to_s if @@logging
+        params = {}
+        params_array = resp.split("&")
+        params_array.each do |p|
+            ps = p.split("=")
+            params[ps[0]] = ps[1]
+        end
+        return params
+    end
+
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
     def self.oauth_exchange_session(app_id, secret, session_keys)
         url = "#{graph_base}oauth/exchange_sessions"
