@@ -714,7 +714,7 @@ module MiniFB
 
         scopes += %w{
           read_insights read_stream read_mailbox read_friendlists read_requests
-          email ads_management xmpp_login
+          email ads_management xmpp_login manage_pages
           publish_stream create_event rsvp_event sms offline_access
         }
     end
