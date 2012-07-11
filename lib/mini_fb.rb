@@ -518,6 +518,49 @@ module MiniFB
         return params
     end
 
+    # Returns a string containing your app access token
+    def self.app_access_token(app_id, secret)
+        oauth_url = "#{graph_base}oauth/access_token"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&client_secret=#{secret}"
+        oauth_url << "&grant_type=client_credentials"
+        resp = RestClient.get oauth_url
+        return resp.body.split('=')[1]
+    end
+
+    # Returns a hash containing test user id, access_token, and login URL
+    # 'installed' is a boolean indicating whether the user has the app installed or not
+    # 'permissions' is a string containing comma-separated FB permissions that the test user granted to your app
+    def self.create_test_user(app_id, secret, installed, permissions)
+        url = "#{graph_base}#{app_id}/accounts/test-users"
+        params = {}
+        params['access_token'] = app_access_token(app_id, secret)
+        params['installed'] = installed
+        params['permissions'] = permissions
+        options = {}
+        options[:params] = params
+        options[:method] = :post
+        return fetch(url, options)
+    end
+
+    # Sends a friend request from test_user_1 to test_user_2 or accepts friendship if a request from test_user_2 is pending
+    # Raises an error if a request has already been sent or if users are already friends, returns response = true if request is successful
+    def self.send_test_user_friend_request(test_user_1, test_user_2)
+        raise "Invalid user hash" unless (%w{id access_token} - test_user_1.keys).empty? and (%w{id access_token} - test_user_2.keys).empty?
+        url = "#{graph_base}#{test_user_1['id']}/friends/#{test_user_2['id']}"
+        params = {'access_token' => test_user_1['access_token']}
+        options = {}
+        options[:params] = params
+        options[:method] = :post
+        return fetch(url, options)
+    end
+
+    # Makes test_user_1 and test_user_2 friends by sending a request from one to the other then accepting it
+    # Raises an error if anything goes wrong, returns response = true if operation is successful
+    def self.add_test_user_friendship(test_user_1, test_user_2)
+      send_test_user_friend_request(test_user_2, test_user_1) if send_test_user_friend_request(test_user_1, test_user_2)
+    end
+
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
     def self.oauth_exchange_session(app_id, secret, session_keys)
         url = "#{graph_base}oauth/exchange_sessions"
