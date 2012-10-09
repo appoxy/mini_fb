@@ -604,7 +604,6 @@ module MiniFB
         options[:params] = params
         options[:method] = :post
         return fetch(url, options)
-
     end
 
     # Executes an FQL query
@@ -693,10 +692,14 @@ module MiniFB
 
             return res_hash
         rescue RestClient::Exception => ex
-            puts "ex.http_code=" + ex.http_code.to_s
-            puts 'ex.http_body=' + ex.http_body if @@logging
-            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
-            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+          puts "ex.http_code=" + ex.http_code.to_s
+          puts 'ex.http_body=' + ex.http_body if @@logging
+          res_hash = JSON.parse(ex.http_body) if ex.http_body && ex.http_body.size > 2
+          error_msg = ex.inspect
+          if res_hash.is_a?(Hash) && res_hash["error"]
+            error_msg = "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}"
+          end
+          raise MiniFB::FaceBookError.new(ex.http_code, error_msg)
         end
 
     end
