@@ -1,6 +1,6 @@
 
 begin
-    require 'jeweler'
+    require 'jeweler2'
     Jeweler::Tasks.new do |gemspec|
         gemspec.name = "mini_fb"
         gemspec.summary = "Tiny facebook library"
@@ -14,5 +14,5 @@ begin
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
-    puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+    puts "Jeweler not available. Install it with: sudo gem install jeweler2"
 end
