@@ -451,7 +451,7 @@ module MiniFB
             @object.metadata.connections.keys
         end
 
-        unless RUBY_VERSION =~ /1\.9/
+        unless RUBY_VERSION >= '1.9'
             undef :id, :type
         end
 
