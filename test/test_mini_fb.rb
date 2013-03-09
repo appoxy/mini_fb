@@ -1,4 +1,3 @@
-require 'test/unit'
 require 'rspec'
 require 'uri'
 require 'yaml'
@@ -28,12 +27,6 @@ describe "Some Feature" do
         # this code runs once per-test
     end
 
-    it "should do something useful, rather than just being called test1" do
-        # el code here
-        puts 'whatup'
-        true.should be_true
-    end
-
     it 'test_uri_escape' do
         URI.escape("x=y").should eq("x=y")
     end
@@ -50,7 +43,7 @@ describe "Some Feature" do
         # Example request and secret taken from http://developers.facebook.com/docs/authentication/canvas
         secret = 'secret'
         req = 'vlXgu64BQGFSQrY0ZcJBZASMvYvTHu9GQ0YM9rjPSso.eyJhbGdvcml0aG0iOiJITUFDLVNIQTI1NiIsIjAiOiJwYXlsb2FkIn0'
-        assert_equal MiniFB.signed_request_params(secret, req), {"0" => "payload"}
+        expect(MiniFB.signed_request_params(secret, req)).to eq({"0" => "payload"})
     end
 
 end
@@ -76,5 +69,4 @@ def test_me_with_fields
     }
 
     snap   = MiniFB.get(access_token, 'me', :fields =>fields.keys)
-
 end
