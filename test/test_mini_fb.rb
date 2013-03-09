@@ -9,7 +9,8 @@ describe "Some Feature" do
 
     before :all do
         @is_setup = true
-        @config   = File.open(File.expand_path("~/.test_configs/mini_fb_tests.yml")) { |yf| YAML::load(yf) }
+        file_path = File.expand_path("../mini_fb_tests.yml", File.dirname(__FILE__))
+        @config   = File.open(file_path) { |yf| YAML::load(yf) }
         puts "@config=" + @config.inspect
         MiniFB.log_level = :debug
 
