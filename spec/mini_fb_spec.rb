@@ -4,21 +4,17 @@ require 'yaml'
 require 'active_support/core_ext'
 require_relative '../lib/mini_fb'
 
-describe "Some Feature" do
+describe MiniFB do
 
     before :all do
         @is_setup = true
         file_path = File.expand_path("../mini_fb_tests.yml", File.dirname(__FILE__))
         @config   = File.open(file_path) { |yf| YAML::load(yf) }
-        puts "@config=" + @config.inspect
-        MiniFB.log_level = :debug
+        MiniFB.log_level = :warn
 
-        @oauth_url       = MiniFB.oauth_url(@config['fb_app_id'], # your Facebook App ID (NOT API_KEY)
+        @oauth_url       = MiniFB.oauth_url(@config['fb_app_id'],
                                             "http://localhost:3000", # redirect url
                                             :scope=>MiniFB.scopes.join(","))
-        puts "If you need an access token, go here in your browser:"
-        puts "#{@oauth_url}"
-        puts "Then grab the 'code' parameter in the redirect url and add it to mini_fb_tests.yml."
     end
 
 
@@ -33,7 +29,6 @@ describe "Some Feature" do
 
     it 'test_authenticate_as_app' do
         res = MiniFB.authenticate_as_app(@config["fb_api_key"], @config["fb_secret"])
-        puts 'res=' + res.inspect
         res.should include("access_token")
         res["access_token"].should match(/^#{@config['fb_app_id']}/)#starts_with?(@config["fb_app_id"].to_s)
     end
