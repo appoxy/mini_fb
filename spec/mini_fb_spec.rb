@@ -1,24 +1,20 @@
-require 'test/unit'
 require 'rspec'
 require 'uri'
 require 'yaml'
 require 'active_support/core_ext'
 require_relative '../lib/mini_fb'
 
-describe "Some Feature" do
+describe MiniFB do
 
     before :all do
         @is_setup = true
-        @config   = File.open(File.expand_path("~/.test_configs/mini_fb_tests.yml")) { |yf| YAML::load(yf) }
-        puts "@config=" + @config.inspect
-        MiniFB.log_level = :debug
+        file_path = File.expand_path("../mini_fb_tests.yml", File.dirname(__FILE__))
+        @config   = File.open(file_path) { |yf| YAML::load(yf) }
+        MiniFB.log_level = :warn
 
-        @oauth_url       = MiniFB.oauth_url(@config['fb_app_id'], # your Facebook App ID (NOT API_KEY)
+        @oauth_url       = MiniFB.oauth_url(@config['fb_app_id'],
                                             "http://localhost:3000", # redirect url
                                             :scope=>MiniFB.scopes.join(","))
-        puts "If you need an access token, go here in your browser:"
-        puts "#{@oauth_url}"
-        puts "Then grab the 'code' parameter in the redirect url and add it to mini_fb_tests.yml."
     end
 
 
@@ -27,19 +23,12 @@ describe "Some Feature" do
         # this code runs once per-test
     end
 
-    it "should do something useful, rather than just being called test1" do
-        # el code here
-        puts 'whatup'
-        true.should be_true
-    end
-
     it 'test_uri_escape' do
         URI.escape("x=y").should eq("x=y")
     end
 
     it 'test_authenticate_as_app' do
         res = MiniFB.authenticate_as_app(@config["fb_api_key"], @config["fb_secret"])
-        puts 'res=' + res.inspect
         res.should include("access_token")
         res["access_token"].should match(/^#{@config['fb_app_id']}/)#starts_with?(@config["fb_app_id"].to_s)
     end
@@ -49,7 +38,7 @@ describe "Some Feature" do
         # Example request and secret taken from http://developers.facebook.com/docs/authentication/canvas
         secret = 'secret'
         req = 'vlXgu64BQGFSQrY0ZcJBZASMvYvTHu9GQ0YM9rjPSso.eyJhbGdvcml0aG0iOiJITUFDLVNIQTI1NiIsIjAiOiJwYXlsb2FkIn0'
-        assert_equal MiniFB.signed_request_params(secret, req), {"0" => "payload"}
+        expect(MiniFB.signed_request_params(secret, req)).to eq({"0" => "payload"})
     end
 
 end
@@ -75,5 +64,4 @@ def test_me_with_fields
     }
 
     snap   = MiniFB.get(access_token, 'me', :fields =>fields.keys)
-
 end
