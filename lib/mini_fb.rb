@@ -451,7 +451,7 @@ module MiniFB
             @object.metadata.connections.keys
         end
 
-        unless RUBY_VERSION =~ /1\.9/
+        unless RUBY_VERSION >= '1.9'
             undef :id, :type
         end
 
@@ -522,6 +522,24 @@ module MiniFB
         return params
     end
 
+    # returns a hash with one value being 'access_token', the other being 'expires'
+    def self.fb_exchange_token(app_id, secret, access_token)
+        oauth_url = "#{graph_base}oauth/access_token"
+        oauth_url << "?client_id=#{app_id}"
+        oauth_url << "&client_secret=#{secret}"
+        oauth_url << "&grant_type=fb_exchange_token"
+        oauth_url << "&fb_exchange_token=#{CGI.escape(access_token)}"
+        resp = RestClient.get oauth_url
+        puts 'resp=' + resp.body.to_s if @@logging
+        params = {}
+        params_array = resp.split("&")
+        params_array.each do |p|
+            ps = p.split("=")
+            params[ps[0]] = ps[1]
+        end
+        return params
+    end
+
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
     def self.oauth_exchange_session(app_id, secret, session_keys)
         url = "#{graph_base}oauth/exchange_sessions"
@@ -548,7 +566,7 @@ module MiniFB
         options[:method] = :get
         options[:response_type] = :params
         resp = fetch(url, options)
-        puts 'resp=' + resp.body.to_s if @@logging
+        puts 'resp=' + resp if @@logging
         resp
     end
 
@@ -688,6 +706,7 @@ module MiniFB
             if res_hash.is_a? Array # fql  return this
                 res_hash.collect! { |x| x.is_a?(Hash) ? Hashie::Mash.new(x) : x }
             else
+                res_hash = { response: res_hash } unless res_hash.is_a? Hash
                 res_hash = Hashie::Mash.new(res_hash)
             end
 
@@ -697,7 +716,7 @@ module MiniFB
 
             return res_hash
         rescue RestClient::Exception => ex
-            puts "ex.http_code=" + ex.http_code.to_s
+            puts "ex.http_code=" + ex.http_code.to_s if @@logging
             puts 'ex.http_body=' + ex.http_body if @@logging
             res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
             raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
