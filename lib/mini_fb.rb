@@ -555,16 +555,16 @@ module MiniFB
     # Public search with Facebook Graph API
     # options:
     #   - q: query string
-    #   - type: type of search (ex: user, event, etc)
+    #   - type: type of search (ex: user, event, etc) - As of 9/10/14 Graph API supports search of page, post, event
     #   - params: Any additional parameters you would like to submit
     def self.search(access_token, q, options={})
-        url = "#{graph_base}search"
         params = options[:params] || {}
         params["q"] = "#{q}"
         params["access_token"] = "#{(access_token)}"
         params["type"] = options[:type] if options[:type]
         params["fields"] = options[:fields].join(",") if options[:fields]
         options[:params] = params
+        url = "#{graph_base}search?q=#{q}&type=#{options[:type]}"
         puts "#{url}\n"
         return fetch(url, options)
     end
