@@ -489,10 +489,6 @@ module MiniFB
         "https://graph.facebook.com/"
     end
 
-    def self.graph_video_base
-        "https://graph-video.facebook.com/"
-    end
-
     # options:
     #   - scope: comma separated list of extends permissions. see http://developers.facebook.com/docs/authentication/permissions
     def self.oauth_url(app_id, redirect_uri, options={})
@@ -609,8 +605,7 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.post(access_token, id, options={})
-        url_base = options[:type] && options[:type] == 'video' ? graph_video_base : graph_base
-        url = "#{url_base}#{id}"
+        url = "#{graph_base}#{id}"
         url << "/#{options[:type]}" if options[:type]
         options.delete(:type)
         params = options[:params] || {}
