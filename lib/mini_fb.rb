@@ -14,7 +14,7 @@
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
-require 'rest_client'
+require 'rest-client'
 require 'hashie'
 require 'base64'
 require 'openssl'
