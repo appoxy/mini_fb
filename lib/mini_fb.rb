@@ -562,7 +562,7 @@ module MiniFB
         options[:method] = :get
         options[:response_type] = :params
         resp = fetch(url, options)
-        puts 'resp=' + resp if @@logging
+        puts 'resp=' + resp.to_s if @@logging
         resp
     end
 
