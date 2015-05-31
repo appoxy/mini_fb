@@ -317,7 +317,7 @@ module MiniFB
     def self.verify_signed_request(secret, req)
         s, p = req.split(".")
         sig = base64_url_decode(s)
-        expected_sig = OpenSSL::HMAC.digest('SHA256', secret, p.tr("-_", "+/"))
+        expected_sig = OpenSSL::HMAC.digest('SHA256', secret, p)
         return sig == expected_sig
     end
 
@@ -581,6 +581,28 @@ module MiniFB
         options[:params] = params
         return fetch(url, options)
     end
+    
+    # Gets multiple data from the Facebook Graph API
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
+    # Example:
+    #
+    # MiniFB.multiget(access_token, [123, 234])
+    #
+    # Can throw a connection Timeout if there is too many items
+    def self.multiget(access_token, ids, options={})
+        url = "#{graph_base}"
+        url << "#{options[:type]}" if options[:type]
+        params = options[:params] || {}
+        params["ids"] = ids.join(',')
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        params["fields"] = options[:fields].join(",") if options[:fields]
+        options[:params] = params
+        return fetch(url, options)
+    end
 
     # Posts data to the Facebook Graph API
     # options:
@@ -603,6 +625,31 @@ module MiniFB
         params["metadata"] = "1" if options[:metadata]
         options[:params] = params
         options[:method] = :post
+        return fetch(url, options)
+
+    end
+    
+    # Sends a DELETE request to the Facebook Graph API
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
+    def self.delete(access_token, ids, options={})
+        url = "#{graph_base}"
+        params = options[:params] || {}
+        if ids.is_a?(Array)
+          params["ids"] = ids.join(',')
+        else
+          url << "#{ids}"
+        end
+        url << "/#{options[:type]}" if options[:type]
+        options.delete(:type)
+        options.each do |key, value|
+            params[key] = "#{value}"
+        end
+        params["access_token"] = "#{(access_token)}"
+        options[:params] = params
+        options[:method] = :delete
         return fetch(url, options)
 
     end
@@ -650,9 +697,16 @@ module MiniFB
     def self.fetch(url, options={})
 
         begin
-            if options[:method] == :post
+            case options[:method]
+            when :post
                 @@log.debug 'url_post=' + url if @@logging
                 resp = RestClient.post url, options[:params]
+            when :delete
+                if options[:params] && options[:params].size > 0
+                    url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
+                end
+                @@log.debug 'url_delete=' + url if @@logging
+                resp = RestClient.delete url
             else
                 if options[:params] && options[:params].size > 0
                     url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
