@@ -14,7 +14,7 @@
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
-require 'rest-client'
+require 'rest_client'
 require 'hashie'
 require 'base64'
 require 'openssl'
@@ -581,7 +581,7 @@ module MiniFB
         options[:params] = params
         return fetch(url, options)
     end
-    
+
     # Gets multiple data from the Facebook Graph API
     # options:
     #   - type: eg: feed, home, etc
@@ -628,7 +628,7 @@ module MiniFB
         return fetch(url, options)
 
     end
-    
+
     # Sends a DELETE request to the Facebook Graph API
     # options:
     #   - type: eg: feed, home, etc
