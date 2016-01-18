@@ -573,7 +573,9 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.get(access_token, id, options={})
-        url = "#{graph_base}#{id}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
+        url << id
         url << "/#{options[:type]}" if options[:type]
         params = options[:params] || {}
         params["access_token"] = "#{(access_token)}"
@@ -594,7 +596,8 @@ module MiniFB
     #
     # Can throw a connection Timeout if there is too many items
     def self.multiget(access_token, ids, options={})
-        url = "#{graph_base}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
         url << "#{options[:type]}" if options[:type]
         params = options[:params] || {}
         params["ids"] = ids.join(',')
@@ -611,7 +614,9 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.post(access_token, id, options={})
-        url = "#{graph_base}#{id}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
+        url << id
         url << "/#{options[:type]}" if options[:type]
         options.delete(:type)
         params = options[:params] || {}
@@ -636,7 +641,8 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.delete(access_token, ids, options={})
-        url = "#{graph_base}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
         params = options[:params] || {}
         if ids.is_a?(Array)
           params["ids"] = ids.join(',')

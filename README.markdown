@@ -47,14 +47,21 @@ Facebook now uses Oauth 2 for authentication, but don't worry, this part is easy
 That's it. You now need to hold onto this access_token. We've put it in a cookie for now, but you probably
 want to store it in your database or something.
 
-Getting Data from Facebook
+General Use
 --------------------------
+
+    @response_hash = MiniFB.get(@access_token, @id, @options = {})
+
 
 It's very simple:
 
     @id = {some ID of something in facebook} || "me"
-    @type = {some facebook type like feed, friends, or photos} # (optional) nil will just return the object data directly
-    @response_hash = MiniFB.get(@access_token, @id, :type=>@type)
+    @options:
+      type = {some facebook type like feed, friends, or photos}
+      version = {version of the graph api}. Example: "2.5"
+      fields = {array of fields to explicit fetch}
+      params = {optional params}
+
     # @response_hash is a hash, but also allows object like syntax for instance, the following is true:
     @response_hash["user"] == @response_hash.user
 
@@ -112,7 +119,7 @@ eg:
       :uid => @user_id, :target_id => @target_user_id,
       :message => "Hello other user!"
     })
-    
+
 all responses will be json. In the instance of 'bad json' methods, the response will formatted {'response': '#{bad_response_string}'}
 
 
@@ -194,7 +201,7 @@ Define an fb_connect method in your login/sessions controller like so:
         @fb_info = MiniFB.parse_cookie_information(FB_APP_ID, cookies) # some users may have to use their API rather than the app. ID.
         puts "uid=#{@fb_info['uid']}"
         puts "session=#{@fb_info['session_key']}"
-        
+
         if MiniFB.verify_cookie_signature(FB_APP_ID, FB_SECRET, cookies)
           # And here you would create the user if it doesn't already exist, then redirect them to wherever you want.
         else
