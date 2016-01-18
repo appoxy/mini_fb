@@ -14,7 +14,7 @@
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
-require 'rest_client'
+require 'rest-client'
 require 'hashie'
 require 'base64'
 require 'openssl'
@@ -572,7 +572,9 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.get(access_token, id, options={})
-        url = "#{graph_base}#{id}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
+        url << id
         url << "/#{options[:type]}" if options[:type]
         params = options[:params] || {}
         params["access_token"] = "#{(access_token)}"
@@ -593,7 +595,8 @@ module MiniFB
     #
     # Can throw a connection Timeout if there is too many items
     def self.multiget(access_token, ids, options={})
-        url = "#{graph_base}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
         url << "#{options[:type]}" if options[:type]
         params = options[:params] || {}
         params["ids"] = ids.join(',')
@@ -610,7 +613,9 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.post(access_token, id, options={})
-        url = "#{graph_base}#{id}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
+        url << id
         url << "/#{options[:type]}" if options[:type]
         options.delete(:type)
         params = options[:params] || {}
@@ -635,7 +640,8 @@ module MiniFB
     #   - metadata: to include metadata in response. true/false
     #   - params: Any additional parameters you would like to submit
     def self.delete(access_token, ids, options={})
-        url = "#{graph_base}"
+        url = graph_base
+        url << "v#{options[:version]}/" if options[:version]
         params = options[:params] || {}
         if ids.is_a?(Array)
           params["ids"] = ids.join(',')
@@ -715,7 +721,8 @@ module MiniFB
                 resp = RestClient.get url
             end
 
-            @@log.debug 'resp=' + resp.to_s if @@log.debug?
+            @@log.debug 'Response =' + resp.to_s if @@logging
+            @@log.debug 'API Version =' + resp.headers[:facebook_api_version].to_s if @@logging
 
             if options[:response_type] == :params
                 # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
