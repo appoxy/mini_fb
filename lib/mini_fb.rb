@@ -14,7 +14,7 @@
 require 'digest/md5'
 require 'erb'
 require 'json' unless defined? JSON
-require 'rest-client'
+require 'httpclient'
 require 'hashie'
 require 'base64'
 require 'openssl'
@@ -28,6 +28,8 @@ module MiniFB
 
     @@logging = false
     @@log = Logger.new(STDOUT)
+    @@http = HTTPClient.new
+
 
     def self.log_level=(level)
         if level.is_a? Numeric
@@ -507,7 +509,7 @@ module MiniFB
         oauth_url << "&redirect_uri=#{CGI.escape(redirect_uri)}"
         oauth_url << "&client_secret=#{secret}"
         oauth_url << "&code=#{CGI.escape(code)}"
-        resp = RestClient.get oauth_url
+        resp = @@http.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
         params = {}
         params_array = resp.split("&")
@@ -525,7 +527,7 @@ module MiniFB
         oauth_url << "&client_secret=#{secret}"
         oauth_url << "&grant_type=fb_exchange_token"
         oauth_url << "&fb_exchange_token=#{CGI.escape(access_token)}"
-        resp = RestClient.get oauth_url
+        resp = @@http.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
         params = {}
         params_array = resp.split("&")
@@ -556,7 +558,6 @@ module MiniFB
         params["type"] = "client_cred"
         params["client_id"] = "#{app_id}"
         params["client_secret"] = "#{secret}"
-#      resp = RestClient.get url
         options = {}
         options[:params] = params
         options[:method] = :get
@@ -701,66 +702,64 @@ module MiniFB
     end
 
     def self.fetch(url, options={})
-
-        begin
-            case options[:method]
-            when :post
-                @@log.debug 'url_post=' + url if @@logging
-                resp = RestClient.post url, options[:params]
-            when :delete
-                if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
-                end
-                @@log.debug 'url_delete=' + url if @@logging
-                resp = RestClient.delete url
-            else
-                if options[:params] && options[:params].size > 0
-                    url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
-                end
-                @@log.debug 'url_get=' + url if @@logging
-                resp = RestClient.get url
+        case options[:method]
+        when :post
+            @@log.debug 'url_post=' + url if @@logging
+            response = @@http.post url, options[:params]
+        when :delete
+            if options[:params] && options[:params].size > 0
+                url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
             end
-
-            @@log.debug 'Response =' + resp.to_s if @@logging
-            @@log.debug 'API Version =' + resp.headers[:facebook_api_version].to_s if @@logging
-
-            if options[:response_type] == :params
-                # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
-                params = {}
-                params_array = resp.split("&")
-                params_array.each do |p|
-                    ps = p.split("=")
-                    params[ps[0]] = ps[1]
-                end
-                return params
-            else
-                begin
-                    res_hash = JSON.parse(resp.to_s)
-                rescue
-                    # quick fix for things like stream.publish that don't return json
-                    res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
-                end
+            @@log.debug 'url_delete=' + url if @@logging
+            response = @@http.delete url
+        else
+            if options[:params] && options[:params].size > 0
+                url += '?' + options[:params].map { |k, v|  CGI.escape(k.to_s) + '=' + CGI.escape(v.to_s) }.join('&')
             end
-
-            if res_hash.is_a? Array # fql  return this
-                res_hash.collect! { |x| x.is_a?(Hash) ? Hashie::Mash.new(x) : x }
-            else
-                res_hash = { response: res_hash } unless res_hash.is_a? Hash
-                res_hash = Hashie::Mash.new(res_hash)
-            end
-
-            if res_hash.include?("error_msg")
-                raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
-            end
-
-            return res_hash
-        rescue RestClient::Exception => ex
-            puts "ex.http_code=" + ex.http_code.to_s if @@logging
-            puts 'ex.http_body=' + ex.http_body if @@logging
-            res_hash = JSON.parse(ex.http_body) # probably should ensure it has a good response
-            raise MiniFB::FaceBookError.new(ex.http_code, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+            @@log.debug 'url_get=' + url if @@logging
+            response = @@http.get url
         end
 
+        resp = response.body
+        @@log.debug "Response = #{resp}. Status = #{response.status}" if @@logging
+        @@log.debug 'API Version =' + response.headers["Facebook-API-Version"].to_s if @@logging
+
+        res_hash = JSON.parse(resp)
+
+        unless response.ok?
+            raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+        end
+
+        if options[:response_type] == :params
+            # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
+            params = {}
+            params_array = resp.split("&")
+            params_array.each do |p|
+                ps = p.split("=")
+                params[ps[0]] = ps[1]
+            end
+            return params
+        else
+            begin
+                res_hash = JSON.parse(resp.to_s)
+            rescue
+                # quick fix for things like stream.publish that don't return json
+                res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
+            end
+        end
+
+        if res_hash.is_a? Array # fql  return this
+            res_hash.collect! { |x| x.is_a?(Hash) ? Hashie::Mash.new(x) : x }
+        else
+            res_hash = { response: res_hash } unless res_hash.is_a? Hash
+            res_hash = Hashie::Mash.new(res_hash)
+        end
+
+        if res_hash.include?("error_msg")
+            raise FaceBookError.new(res_hash["error_code"] || 1, res_hash["error_msg"])
+        end
+
+        res_hash
     end
 
     # Returns all available scopes.
