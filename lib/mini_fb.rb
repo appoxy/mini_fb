@@ -512,7 +512,7 @@ module MiniFB
         resp = @@http.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
         params = {}
-        params_array = resp.split("&")
+        params_array = resp.body.to_s.split("&")
         params_array.each do |p|
             ps = p.split("=")
             params[ps[0]] = ps[1]
@@ -530,7 +530,7 @@ module MiniFB
         resp = @@http.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
         params = {}
-        params_array = resp.split("&")
+        params_array = resp.body.to_s.split("&")
         params_array.each do |p|
             ps = p.split("=")
             params[ps[0]] = ps[1]
@@ -733,7 +733,7 @@ module MiniFB
         if options[:response_type] == :params
             # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
             params = {}
-            params_array = resp.split("&")
+            params_array = resp.body.to_s.split("&")
             params_array.each do |p|
                 ps = p.split("=")
                 params[ps[0]] = ps[1]
