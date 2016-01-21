@@ -724,7 +724,7 @@ module MiniFB
         @@log.debug "Response = #{resp}. Status = #{response.status}" if @@logging
         @@log.debug 'API Version =' + response.headers["Facebook-API-Version"].to_s if @@logging
 
-        res_hash = JSON.parse(resp)
+        res_hash = JSON.parse(resp.to_s.size > 2 ? resp.to_s : {response: resp.to_s}.to_json)
 
         unless response.ok?
             raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
@@ -740,12 +740,7 @@ module MiniFB
             end
             return params
         else
-            begin
-                res_hash = JSON.parse(resp.to_s)
-            rescue
-                # quick fix for things like stream.publish that don't return json
-                res_hash = JSON.parse("{\"response\": #{resp.to_s}}")
-            end
+            res_hash = JSON.parse(resp.to_s.size > 2 ? resp.to_s : {response: resp.to_s}.to_json)
         end
 
         if res_hash.is_a? Array # fql  return this
