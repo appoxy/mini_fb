@@ -724,16 +724,10 @@ module MiniFB
         @@log.debug "Response = #{resp}. Status = #{response.status}" if @@logging
         @@log.debug 'API Version =' + response.headers["Facebook-API-Version"].to_s if @@logging
 
-        res_hash = JSON.parse(resp.to_s.size > 2 ? resp.to_s : {response: resp.to_s}.to_json)
-
-        unless response.ok?
-            raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
-        end
-
         if options[:response_type] == :params
             # Some methods return a param like string, for example: access_token=11935261234123|rW9JMxbN65v_pFWQl5LmHHABC
             params = {}
-            params_array = resp.body.to_s.split("&")
+            params_array = resp.to_s.split("&")
             params_array.each do |p|
                 ps = p.split("=")
                 params[ps[0]] = ps[1]
@@ -741,6 +735,9 @@ module MiniFB
             return params
         else
             res_hash = JSON.parse(resp.to_s.size > 2 ? resp.to_s : {response: resp.to_s}.to_json)
+            unless response.ok?
+                raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+            end
         end
 
         if res_hash.is_a? Array # fql  return this
