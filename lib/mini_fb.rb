@@ -520,17 +520,29 @@ module MiniFB
         return params
     end
 
+    # Gets long-lived token from the Facebook Graph API
+    # options:
+    #   - app_id: your app ID (string)
+    #   - secret: your app secret (string)
+    #   - access_token: short-lived user token (string)
     # returns a hash with one value being 'access_token', the other being 'expires'
+    #
+    # Throws MiniFB::FaceBookError if response from Facebook Graph API is not successful
     def self.fb_exchange_token(app_id, secret, access_token)
         oauth_url = "#{graph_base}oauth/access_token"
         oauth_url << "?client_id=#{app_id}"
         oauth_url << "&client_secret=#{secret}"
         oauth_url << "&grant_type=fb_exchange_token"
         oauth_url << "&fb_exchange_token=#{CGI.escape(access_token)}"
-        resp = @@http.get oauth_url
-        puts 'resp=' + resp.body.to_s if @@logging
+        response = @@http.get oauth_url
+        body = response.body.to_s
+        puts 'resp=' + body if @@logging
+        unless response.ok?
+          res_hash = JSON.parse(body)
+          raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
+        end
         params = {}
-        params_array = resp.body.to_s.split("&")
+        params_array = body.split("&")
         params_array.each do |p|
             ps = p.split("=")
             params[ps[0]] = ps[1]
