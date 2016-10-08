@@ -397,6 +397,10 @@ module MiniFB
         def get(id, options={})
             MiniFB.get(@access_token, id, session_options(options))
         end
+        
+        def multiget(ids, options={})
+            MiniFB.multiget(@access_token, ids, session_options(options))
+        end
 
         def post(id, options={})
             MiniFB.post(@access_token, id, session_options(options))
@@ -590,6 +594,28 @@ module MiniFB
         url << id
         url << "/#{options[:type]}" if options[:type]
         params = options[:params] || {}
+        params["access_token"] = "#{(access_token)}"
+        params["metadata"] = "1" if options[:metadata]
+        params["fields"] = options[:fields].join(",") if options[:fields]
+        options[:params] = params
+        return fetch(url, options)
+    end
+    
+    # Gets multiple data from the Facebook Graph API
+    # options:
+    #   - type: eg: feed, home, etc
+    #   - metadata: to include metadata in response. true/false
+    #   - params: Any additional parameters you would like to submit
+    # Example:
+    #
+    # MiniFB.multiget(access_token, [123, 234])
+    #
+    # Can throw a connection Timeout if there is too many items
+    def self.multiget(access_token, ids, options={})
+        url = "#{graph_base}"
+        url << "#{options[:type]}" if options[:type]
+        params = options[:params] || {}
+        params["ids"] = ids.join(',')
         params["access_token"] = "#{(access_token)}"
         params["metadata"] = "1" if options[:metadata]
         params["fields"] = options[:fields].join(",") if options[:fields]
