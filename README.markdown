@@ -219,3 +219,11 @@ This is as simple as calling:
     @fb.call("photos.upload", "filename"=>"<full path to file>")
 
 The file_name parameter will be used as the file data.
+
+Video Uploads
+-------------
+
+Similar to photos, but the correct [mime-type](http://en.wikipedia.org/wiki/Internet_media_type) is required:
+
+    @fb.call("video.upload", "filename"=>"<full path to file>", "mime_type" => "video/mp4")
+

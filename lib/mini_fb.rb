@@ -19,11 +19,13 @@ require 'hashie'
 require 'base64'
 require 'openssl'
 require 'logger'
+require 'mime/types'
 
 module MiniFB
 
     # Global constants
     FB_URL = "http://api.facebook.com/restserver.php"
+    FB_VIDEO_URL = "https://api-video.facebook.com/restserver.php"
     FB_API_VERSION = "1.0"
 
     @@logging = false
@@ -205,13 +207,14 @@ module MiniFB
         kwargs["method"] ||= method
 
         file_name = kwargs.delete("filename")
+        mime_type = kwargs.delete("mime_type") || 'image/jpeg'
 
         kwargs["sig"] = signature_for(kwargs, secret.value.call)
 
         fb_method = kwargs["method"].downcase
-        if fb_method == "photos.upload"
+        if (fb_method == "photos.upload" || fb_method == 'video.upload')
             # Then we need a multipart post
-            response = MiniFB.post_upload(file_name, kwargs)
+            response = MiniFB.post_upload(file_name, kwargs, mime_type)
         else
 
             begin
@@ -248,10 +251,14 @@ module MiniFB
         return data
     end
 
-    def MiniFB.post_upload(filename, kwargs)
+    def MiniFB.post_upload(filename, kwargs, mime_type = 'image/jpeg')
         content = File.open(filename, 'rb') { |f| f.read }
-        boundary = Digest::MD5.hexdigest(content)
+        boundary = "END_OF_PART_#{rand(1 << 64).to_s(16)}"
         header = {'Content-type' => "multipart/form-data, boundary=#{boundary}"}
+
+        # Make sure the filename has the correct extension.
+        # Facebook is really picky about this.
+        remote_filename = ensure_correct_extension(File.basename(filename), mime_type)
 
         # Build query
         query = ''
@@ -263,16 +270,27 @@ module MiniFB
         }
         query <<
                 "--#{boundary}\r\n" <<
-                "Content-Disposition: form-data; filename=\"#{File.basename(filename)}\"\r\n" <<
+                "Content-Disposition: form-data; filename=\"#{remote_filename}\"\r\n" <<
                 "Content-Transfer-Encoding: binary\r\n" <<
-                "Content-Type: image/jpeg\r\n\r\n" <<
+                "Content-Type: #{mime_type}\r\n\r\n" <<
                 content <<
                 "\r\n" <<
                 "--#{boundary}--"
 
         # Call Facebook with POST multipart/form-data request
-        uri = URI.parse(FB_URL)
-        Net::HTTP.start(uri.host) { |http| http.post uri.path, query, header }
+        url = (mime_type.split('/').first == 'video') ? FB_VIDEO_URL : FB_URL
+        raw_post(url, query, header)
+    end
+
+    def MiniFB.raw_post(url, body, headers)
+        uri = URI.parse(url)
+        uri.port = (uri.scheme == 'https') ? 443 : 80
+        http = Net::HTTP.new(uri.host, uri.port)
+        if uri.scheme == 'https'
+            http.use_ssl = true
+            http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+        http.start { |h| h.post(uri.path, body, headers) }
     end
 
     # Returns true is signature is valid, false otherwise.
@@ -384,6 +402,15 @@ module MiniFB
         login_url << "&next=#{options[:next]}" if options[:next]
         login_url << "&canvas" if options[:canvas]
         login_url
+    end
+
+
+    def self.ensure_correct_extension(filename, mime_type)
+        allowed_extensions = MIME::Types[mime_type].first.extensions
+        extension = File.extname(filename)[1 .. -1]
+        if !allowed_extensions.include? extension
+          filename += '.' + allowed_extensions.first
+        end
     end
 
     # Manages access_token and locale params for an OAuth connection
@@ -863,4 +890,5 @@ module MiniFB
         end.sort.join
         Digest::MD5.hexdigest([raw_string, secret].join)
     end
+
 end

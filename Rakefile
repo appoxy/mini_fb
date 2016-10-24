@@ -11,6 +11,7 @@ begin
         gemspec.files = FileList['lib/**/*.rb']
         gemspec.add_dependency 'rest-client'
         gemspec.add_dependency 'hashie'
+        gemspec.add_dependency 'mime-types'
     end
     Jeweler::GemcutterTasks.new
 rescue LoadError
