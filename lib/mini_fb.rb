@@ -511,13 +511,7 @@ module MiniFB
         oauth_url << "&code=#{CGI.escape(code)}"
         resp = @@http.get oauth_url
         puts 'resp=' + resp.body.to_s if @@logging
-        params = {}
-        params_array = resp.body.to_s.split("&")
-        params_array.each do |p|
-            ps = p.split("=")
-            params[ps[0]] = ps[1]
-        end
-        return params
+        JSON.parse(resp.body.to_s)
     end
 
     # Gets long-lived token from the Facebook Graph API
