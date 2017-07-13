@@ -41,7 +41,7 @@ describe MiniFB do
       res = MiniFB.fb_exchange_token(app_id, app_secret, access_token)
 
       expect(res).to include('access_token')
-      expect(res).to include('expires')
+      expect(res).to include('expires_in')
     end
 
     it 'raises error on request with invalid params' do

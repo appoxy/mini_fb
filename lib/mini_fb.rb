@@ -519,7 +519,7 @@ module MiniFB
     #   - app_id: your app ID (string)
     #   - secret: your app secret (string)
     #   - access_token: short-lived user token (string)
-    # returns a hash with one value being 'access_token', the other being 'expires'
+    # returns a hash with one value being 'access_token', the other being 'expires_in'
     #
     # Throws MiniFB::FaceBookError if response from Facebook Graph API is not successful
     def self.fb_exchange_token(app_id, secret, access_token)
@@ -531,17 +531,11 @@ module MiniFB
         response = @@http.get oauth_url
         body = response.body.to_s
         puts 'resp=' + body if @@logging
+        res_hash = JSON.parse(body)
         unless response.ok?
-          res_hash = JSON.parse(body)
           raise MiniFB::FaceBookError.new(response.status, "#{res_hash["error"]["type"]}: #{res_hash["error"]["message"]}")
         end
-        params = {}
-        params_array = body.split("&")
-        params_array.each do |p|
-            ps = p.split("=")
-            params[ps[0]] = ps[1]
-        end
-        return params
+        return res_hash
     end
 
     # Return a JSON object of working Oauth tokens from working session keys, returned in order given
@@ -567,7 +561,7 @@ module MiniFB
         options = {}
         options[:params] = params
         options[:method] = :get
-        options[:response_type] = :params
+        options[:response_type] = :json
         resp = fetch(url, options)
         puts 'resp=' + resp.to_s if @@logging
         resp
